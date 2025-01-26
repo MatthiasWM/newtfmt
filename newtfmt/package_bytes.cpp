@@ -14,6 +14,15 @@ void PackageBytes::rewind()
 }
 
 /**
+ Set the iterator at a new index.
+ \param[in] ix bytes from start of data
+ */
+void PackageBytes::seek_set(int ix)
+{
+  it_ = begin() + ix;
+}
+
+/**
  Return the offset of the reader within the dataset.
  \return offset in bytes
  */
@@ -106,7 +115,13 @@ std::vector<uint8_t> PackageBytes::get_data(int n) {
 }
 
 /**
- Not used.
+ Update the index to be aligned to a.
+ \param[in] a alignment must be power of two (usually 4 or 8)
  */
-void PackageBytes::align(int n) { }
+void PackageBytes::align(int a)
+{
+  int p = tell();
+  int p_aligned = (p+a-1) & ~(a-1);
+  seek_set(p_aligned);
+}
 

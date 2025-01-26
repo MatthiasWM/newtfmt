@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <locale>
 #include <codecvt>
+#include <memory>
+#include <string>
 
 
 std::string utf16_to_utf8(std::u16string &wstr) {

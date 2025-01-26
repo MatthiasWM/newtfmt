@@ -63,6 +63,32 @@ int writeAsm(std::string assembler_file_name)
   asm_file << "@" << std::endl;
   asm_file << "@ Assembler file generated from Newton Package" << std::endl;
   asm_file << "@" << std::endl << std::endl;
+
+  asm_file << "\t.macro  ref_magic index\n"
+           << "\t.int\t((\\index)<<2)|3\n"
+           << "\t.endm\n\n";
+
+  asm_file << "\t.macro  ref_integer value\n"
+           << "\t.int\t((\\value)<<2)\n"
+           << "\t.endm\n\n";
+
+  asm_file << "\t.macro  ref_pointer label\n"
+           << "\t.int\t\\label + 1\n"
+           << "\t.endm\n\n";
+
+  asm_file << "\t.macro  ref_unichar value\n"
+           << "\t.int\t((\\value)<<4)|10\n"
+           << "\t.endm\n\n";
+
+  asm_file << "\t.macro  ref_nil\n"
+           << "\t.int\t0x00000002\n"
+           << "\t.endm\n\n";
+
+  asm_file << "\t.macro  ref_true\n"
+           << "\t.int\t0x0000001a\n"
+           << "\t.endm\n\n";
+
+
   asm_file << "\t.file\t\"" << pkg_name << "\"" << std::endl;
   asm_file << "\t.data" << std::endl << std::endl;
 

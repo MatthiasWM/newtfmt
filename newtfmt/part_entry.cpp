@@ -63,7 +63,7 @@ int PartEntry::load(PackageBytes &p) {
   compressor_length_ = p.get_ushort();
 
   if ((flags_ & 3) == 1) // kNOSPart
-    part_data_ = std::make_shared<PartDataGeneric>(*this); // TODO: NOS Part Data
+    part_data_ = std::make_shared<PartDataNOS>(*this);
   else
     part_data_ = std::make_shared<PartDataGeneric>(*this);
 

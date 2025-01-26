@@ -18,6 +18,7 @@ class PackageBytes : public std::vector<uint8_t>
 public:
   PackageBytes() = default;
   void rewind();
+  void seek_set(int ix);
   int tell();
   bool eof();
   uint8_t get_ubyte();
