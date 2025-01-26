@@ -1,0 +1,37 @@
+#
+# Files to be ignored by Git (do not commit)
+#
+
+# Ignore everywhere, also in subdirectories
+
+*.bck
+*.exe
+*.o
+**/.DS_Store
+
+# CMake build artifacts if built in source - strongly discouraged!
+
+bin/
+build/
+**/cmake_install.cmake
+**/CMakeCache.txt
+**/CMakeFiles/
+cmake_uninstall.cmake
+/CMakeSettings.json
+/CppProperties.json
+
+# Visual Studio (MSVC) build artifacts
+
+*.tlog
+.vs/
+/out
+
+# VS Code (Visual Studio Code) Editor
+
+.vscode/
+
+# /
+
+# early testing files:
+/mines.*
+/original.pkg
