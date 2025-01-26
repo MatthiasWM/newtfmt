@@ -611,19 +611,19 @@ int main(int argc, const char * argv[])
     std::cout << "ERROR reading package file." << std::endl;
     return 0;
   }
-  if (writeAsm("/Users/matt/dev/newtfmt/mines.s") < 0) {
+  if (writeAsm("/Users/matt/dev/newtfmt.git/mines.s") < 0) {
     std::cout << "ERROR writing assembler file." << std::endl;
     return 0;
   }
-  if (asmToObj("/Users/matt/dev/newtfmt/mines.s", "/Users/matt/dev/newtfmt/mines.o") < 0) {
+  if (asmToObj("/Users/matt/dev/newtfmt.git/mines.s", "/Users/matt/dev/newtfmt.git/mines.o") < 0) {
     std::cout << "ERROR calling assembler and creating object file." << std::endl;
     return 0;
   }
-  if (objToBin("/Users/matt/dev/newtfmt/mines.o", "/Users/matt/dev/newtfmt/mines.pkg") < 0) {
+  if (objToBin("/Users/matt/dev/newtfmt.git/mines.o", "/Users/matt/dev/newtfmt.git/mines.pkg") < 0) {
     std::cout << "ERROR extracting binary data from object file." << std::endl;
     return 0;
   }
-  if (compareBinaries("/Users/matt/dev/newtfmt/mines.pkg") < 0) {
+  if (compareBinaries("/Users/matt/dev/newtfmt.git/mines.pkg") < 0) {
     std::cout << "ERROR comparing the original package and the new package." << std::endl;
     return 0;
   }
