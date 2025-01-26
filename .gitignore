@@ -7,6 +7,7 @@
 *.bck
 *.exe
 *.o
+*.swp
 **/.DS_Store
 
 # CMake build artifacts if built in source - strongly discouraged!
