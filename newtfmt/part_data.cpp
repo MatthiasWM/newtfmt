@@ -58,7 +58,13 @@ std::shared_ptr<Object> Object::peek(PackageBytes &p, uint32_t offset)
       else
         return std::make_shared<ObjectBinary>(offset); // Binary
     case 1: return std::make_shared<ObjectSlotted>(offset); // Array
+      // TODO: if the class is an integer, the array is used to store a map
+      // for a Frame. Check what flags are set (sorted(1), _proto(4)),
+      // and if any map has a supermap.
+      // TODO: what other special class values are there?
     case 2: return std::make_shared<ObjectBinary>(offset); // Unknown
+      // TODO: use the symbol to get information and find Reals and ByteCode
+      // There are also machine code block, bitmaps, sounds etc. .
     case 3: return std::make_shared<ObjectSlotted>(offset); // Frame
   }
 }
