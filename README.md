@@ -23,15 +23,30 @@ into an object file using the GNU assembler. The GNU objcopy tool can then
 extract the .data segment as binary, effectively reconstructing 
 the original Package file.
 
-## Next Steps
+Extracting NewtonScript objects from NOS Parts within the Package works well 
+and they are written to the assembly file with labels.
 
-The next development phase will focus on extracting NewtonScript objects from 
-NOS Parts within the Package and writing them back into the assembly file.
+## Next Steps
 
 All data written to the assembly file should utilize labels rather than direct 
 numerical indexing. Achieving this will ensure that modifications — such as 
 inserting or removing data — do not disrupt the structure of the Package, 
 even if addresses and offsets change dynamically.
+
+Fix duplicate symbols that have the same label. `Error: symbol `sym_0_viewFormat' is already defined`
+
+List all subtypes, "book", etc. .  `WARNING: Part Entry 0: unknown type "auto"`
+
+Can't create object file `"/Users/matt/Azureus/unna/applications/calculator/IPCalc1.1/ipcalc.pkg"`
+
+No output at all: `/Users/matt/Azureus/unna/applications/calculator/GoFigure.pkg`
+
+Crash `"/Users/matt/Azureus/unna/applications/Mapper/CA State map v1.0.pkg"`
+
+Find a Watson package!
+
+Despite the long list, we are very far and generate mostly identical files. 
+Very nice!
 
 ## Long-Term Goals
 

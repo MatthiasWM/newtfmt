@@ -24,6 +24,7 @@ public:
   uint8_t get_ubyte();
   uint16_t get_ushort();
   uint32_t get_uint();
+  uint32_t get_ref();
   std::string get_cstring(int n, bool trailing_nul=true);
   std::string get_ustring(int n, bool trailing_nul=true);
   std::vector<uint8_t> get_data(int n);

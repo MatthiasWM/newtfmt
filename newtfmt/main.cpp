@@ -24,6 +24,8 @@
 const std::string gnu_as { "/opt/homebrew/bin/arm-none-eabi-as" };
 const std::string gnu_objcopy { "/opt/homebrew/bin/arm-none-eabi-objcopy" };
 
+//std::string input_pkg_name { "/Users/matt/Azureus/unna/games/Mines/Mines.pkg" };
+std::string input_pkg_name { "/Users/matt/Azureus/unna/games/Crypto1.1/crypex01.pkg" };
 std::string pkg_name;
 
 ns::PackageBytes pkg_bytes;
@@ -37,11 +39,11 @@ ns::Package pkg;
 int readPackage(std::string package_file_name)
 {
   pkg_name = package_file_name;
-  if (std::ifstream source_file { package_file_name, std::ios::binary }; source_file) {
+  std::ifstream source_file { package_file_name, std::ios::binary };
+  if (source_file) {
     pkg_bytes.assign(std::istreambuf_iterator<char>{source_file}, {});
-    std::cout << "readPackage: package read (" << pkg_bytes.size() << " bytes)." << std::endl;
-    pkg.load(pkg_bytes);
-    return 0;
+    std::cout << "readPackage: \"" << package_file_name << "\" package read (" << pkg_bytes.size() << " bytes)." << std::endl;
+    return pkg.load(pkg_bytes);
   }
   std::cout << "readPackage: Unable to read file \"" << package_file_name << "\"." << std::endl;
   return -1;
@@ -64,33 +66,34 @@ int writeAsm(std::string assembler_file_name)
   asm_file << "@ Assembler file generated from Newton Package" << std::endl;
   asm_file << "@" << std::endl << std::endl;
 
-  asm_file << "\t.macro  ref_magic index\n"
+  asm_file << "\t.macro\tref_magic index\n"
            << "\t.int\t((\\index)<<2)|3\n"
            << "\t.endm\n\n";
 
-  asm_file << "\t.macro  ref_integer value\n"
+  asm_file << "\t.macro\tref_integer value\n"
            << "\t.int\t((\\value)<<2)\n"
            << "\t.endm\n\n";
 
-  asm_file << "\t.macro  ref_pointer label\n"
+  asm_file << "\t.macro\tref_pointer label\n"
            << "\t.int\t\\label + 1\n"
            << "\t.endm\n\n";
 
-  asm_file << "\t.macro  ref_unichar value\n"
+  asm_file << "\t.macro\tref_unichar value\n"
            << "\t.int\t((\\value)<<4)|10\n"
            << "\t.endm\n\n";
 
-  asm_file << "\t.macro  ref_nil\n"
+  asm_file << "\t.macro\tref_nil\n"
            << "\t.int\t0x00000002\n"
            << "\t.endm\n\n";
 
-  asm_file << "\t.macro  ref_true\n"
+  asm_file << "\t.macro\tref_true\n"
            << "\t.int\t0x0000001a\n"
            << "\t.endm\n\n";
 
 
   asm_file << "\t.file\t\"" << pkg_name << "\"" << std::endl;
   asm_file << "\t.data" << std::endl << std::endl;
+
 
   int skip = pkg.writeAsm(asm_file);
   for (auto it = pkg_bytes.begin()+skip; it != pkg_bytes.end(); ++it) {
@@ -101,7 +104,7 @@ int writeAsm(std::string assembler_file_name)
              << std::endl;
   }
 
-  std::cout << "writeAsm: Wrote \"" << assembler_file_name << "\"." << std::endl;
+//  std::cout << "writeAsm: Wrote \"" << assembler_file_name << "\"." << std::endl;
   return 0;
 }
 
@@ -122,7 +125,7 @@ int asmToObj(std::string assembler_file_name, std::string object_file_name)
     return -1;
   }
   
-  std::cout << "asmToObj: Wrote \"" << object_file_name << "\"." << std::endl;
+//  std::cout << "asmToObj: Wrote \"" << object_file_name << "\"." << std::endl;
   return 0;
 }
 
@@ -143,7 +146,7 @@ int objToBin(std::string object_file_name, std::string new_package_name)
     return -1;
   }
 
-  std::cout << "objToBin: Wrote \"" << new_package_name << "\"." << std::endl;
+//  std::cout << "objToBin: Wrote \"" << new_package_name << "\"." << std::endl;
   return 0;
 }
 
@@ -158,10 +161,18 @@ int compareBinaries(std::string new_package_name)
   std::ifstream new_file { new_package_name, std::ios::binary };
   if (new_file) {
     new_pkg.assign(std::istreambuf_iterator<char>{new_file}, {});
-    if (new_pkg == pkg_bytes)
+    if (new_pkg == pkg_bytes) {
       std::cout << "compareBinaries: Packages are identical." << std::endl;
-    else
-      std::cout << "compareBinaries: WARNING! Packages are different!" << std::endl;
+    } else {
+      int i, n = std::min((int)new_pkg.size(), (int)pkg_bytes.size());
+      for (i=0; i<n; ++i) {
+        if (new_pkg[i] != pkg_bytes[i]) break;
+      }
+      std::cout << "ERROR: compareBinaries: Packages differ starting at 0x"
+      << std::setw(8) << std::setfill('0') << std::hex << i << std::dec
+      << " = " << i << "!" << std::endl;
+    }
+    std::cout << std::endl;
     return 0;
   }
   std::cout << "compareBinaries: Unable to read new file \"" << new_package_name << "\"." << std::endl;
@@ -174,7 +185,10 @@ int compareBinaries(std::string new_package_name)
  */
 int main(int argc, const char * argv[])
 {
-  if (readPackage("/Users/matt/Azureus/unna/games/Mines/Mines.pkg") < 0) {
+  if (argc==2) {
+    input_pkg_name = argv[1];
+  }
+  if (readPackage(input_pkg_name) < 0) {
     std::cout << "ERROR reading package file." << std::endl;
     return 0;
   }

@@ -15,8 +15,10 @@ using namespace ns;
 int Package::load(PackageBytes &p) {
   p.rewind();
   signature_ = p.get_cstring(8, false);
-  if ((signature_ != "package0") && (signature_ != "package1"))
-    std::cout << "WARNING: unknown signature \"" << signature_ << "\"\n";
+  if ((signature_ != "package0") && (signature_ != "package1")) {
+    std::cout << "ERROR: unknown signature \"" << signature_ << "\"\n";
+    return -1;
+  }
   type_ = p.get_cstring(4, false);
   flags_ = p.get_uint();
   if (flags_ & 0x09ffffff)
@@ -40,8 +42,10 @@ int Package::load(PackageBytes &p) {
     std::cout << "WARNING: size entry does not match file size (" << size_ << "!=" << p.size() << ").\n";
   date_ = p.get_uint();
   reserved2_ = p.get_uint();
-  if (reserved2_ != 0)
-    std::cout << "WARNING: Reserved2 should be 0.\n";
+//  TODO: this field is documented as 0, but it is set in many packages. Maybe we can find a pattern?
+//  if (reserved2_ != 0)
+//    std::cout << "WARNING: Reserved2 should be 0, but it is " << reserved2_ << " = 0x"
+//    << std::setw(8) << std::setfill('0') << std::hex << reserved2_ << std::dec << ".\n";
   reserved3_ = p.get_uint();
   if (reserved3_ != 0)
     std::cout << "WARNING: Reserved3 should be 0.\n";
@@ -63,9 +67,11 @@ int Package::load(PackageBytes &p) {
   for (auto &part: part_) part.loadInfo(p);
   // NTK sneaks a message into the variable data area after the last info
   // and before the relocation data and parts start.
-  // "Newtontm™ ToolKit Package © 1992-1997, Apple Computer, Inc."
+  // "Newton™ ToolKit Package © 1992-1997, Apple Computer, Inc."
   info_length_ = directory_size_ - p.tell(); // 58 bytes + 2 bytes padding
   info_ = p.get_data(info_length_);
+//  std::string info((char*)&info_[0], info_length_);
+//  std::cout << "PackageInfo: " << info << std::endl;
 
   // Relocation Data if kRelocationFlag is set
   if (flags_ & 0x04000000) {
@@ -74,11 +80,6 @@ int Package::load(PackageBytes &p) {
 
   // Part Data
   for (auto &part: part_) part.loadPartData(p);
-  //    NOS Part:
-  //    00001041 Array
-  //    00000001 Alignment is 4 bytes (0 is 8 bytes)
-  //    00000002 NIL
-  //    000000e9 starting frame pointer (offset into part +1)
 
   return 0;
 }

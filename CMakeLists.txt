@@ -31,6 +31,8 @@ add_executable(
   newtfmt/tools.cpp
   # other files for quick acces
   README.md
+  Package.md
 )
 
 set_source_files_properties(README.md PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(Package.md PROPERTIES HEADER_FILE_ONLY TRUE)

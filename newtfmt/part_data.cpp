@@ -53,18 +53,22 @@ std::shared_ptr<Object> Object::peek(PackageBytes &p, uint32_t offset)
   p.seek_set(pos);
   switch (header_ & 0x00000003) {
     case 0:
+      // TODO: use the symbol to get information and find Reals and ByteCode
+      // There are also machine code block, bitmaps, sounds etc. .
       if (class_ == 0x00055552)
         return std::make_shared<ObjectSymbol>(offset); // Symbol
       else
         return std::make_shared<ObjectBinary>(offset); // Binary
-    case 1: return std::make_shared<ObjectSlotted>(offset); // Array
-      // TODO: if the class is an integer, the array is used to store a map
+    case 1:
+      // If the class is an integer, the array is used to store a map
       // for a Frame. Check what flags are set (sorted(1), _proto(4)),
       // and if any map has a supermap.
+      if ((class_ & 0x00000003) == 0)
+        return std::make_shared<ObjectMap>(offset); // Map
+      else
+        return std::make_shared<ObjectSlotted>(offset); // Array
       // TODO: what other special class values are there?
     case 2: return std::make_shared<ObjectBinary>(offset); // Unknown
-      // TODO: use the symbol to get information and find Reals and ByteCode
-      // There are also machine code block, bitmaps, sounds etc. .
     case 3: return std::make_shared<ObjectSlotted>(offset); // Frame
   }
 }
@@ -79,8 +83,14 @@ int Object::load(PackageBytes &p)
       << ": NS Object type unknown." << std::endl;
     size_ = 0;
   }
+  //  kObjFree      = 0x04,
+  //  kObjMarked    = 0x08,
+  //  kObjLocked    = 0x10,
+  //  kObjForward   = 0x20,
+  //  kObjReadOnly  = 0x40,
+  //  kObjDirty     = 0x80,
   flags_ = (header & 0x000000fc);
-  if (flags_!=64)
+  if (flags_!=64) // Read Only
     std::cout << "WARNING: NS Object flags should be 0x40." << std::endl;
   size_  = ((header >> 8) - 8);
   if (size_ < 0) {
@@ -88,32 +98,34 @@ int Object::load(PackageBytes &p)
     size_ = 0;
   }
   ref_cnt_ = p.get_uint();
-  class_ = p.get_uint();
+  class_ = p.get_ref();
   return 0;
 }
 
+// If the data is unaligned, load the filler bytes.
+void Object::loadPadding(PackageBytes &p, uint32_t start, uint32_t align) {
+  align--;
+  uint32_t fpos = p.tell() - start;
+  uint32_t apos = (fpos + align) & ~align;
+  uint32_t n = apos - fpos;
+  if (n) padding_ = p.get_data(n);
+}
+
+
 int Object::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
-  f << "@ ----- Object" << std::endl;
-  f << "obj_" << p.index() << "_" << offset_ << ":" << std::endl;
+  f << label() << ":" << std::endl;
   f << "\t.int\t(" << size_ << "+8)<<8 | " << flags_ << " | " << type_;
-  f << ", " << ref_cnt_;
-  switch (type_) {
-    case 0:
-      f << "\t@ Binary (" << size_ << " bytes)" << std::endl;
-      break;
-    case 1:
-      f << "\t@ Array (" << (size_/4)-1 << " entries)" << std::endl;
-      break;
-    case 2:
-      f << "\t@ WARNING: unknown type (" << size_ << " bytes)" << std::endl;
-      break;
-    case 3:
-      f << "\t@ Frame (" << (size_/4)-1 << " entries)" << std::endl;
-      break;
-  }
+  f << ", " << ref_cnt_ << std::endl;
   return 8;
 }
+
+void Object::makeAsmLabel(PartDataNOS &p) {
+  char buf[32];
+  ::snprintf(buf, 31, "obj_%d_%d", p.index(), offset_);
+  label_ = buf;
+}
+
 
 int ObjectBinary::load(PackageBytes &p)
 {
@@ -124,6 +136,7 @@ int ObjectBinary::load(PackageBytes &p)
 
 int ObjectBinary::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
+  f << "@ ----- " << offset_ << " Binary Object (" << size_-4 << " bytes)" << std::endl;
   Object::writeAsm(f, p);
   f << "\t" << p.asmRef(class_) << "\t@ class" << std::endl;
   write_data(f, data_);
@@ -135,11 +148,25 @@ int ObjectSymbol::load(PackageBytes &p)
   Object::load(p);
   hash_ = p.get_uint();
   symbol_ = p.get_cstring(size_-8-1);
+#if 0
+  uint32_t fpos = p.tell();
+  uint32_t apos = (fpos + 7) & ~7;
+  uint32_t n = apos - fpos;
+  if (n) {
+    printf("align at 0x%08x, %d: ", fpos, n);
+    for (int i=0; i<n; i++) {
+      printf("%02x", p.get_ubyte());
+    }
+    printf("\n");
+  }
+  p.seek_set(fpos);
+#endif
   return 0;
 }
 
 int ObjectSymbol::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
+  f << "@ ----- " << offset_ << " Symbol (" << size_-9 << " chars)" << std::endl;
   Object::writeAsm(f, p);
   f << "\t.int\t0x"
   << std::setw(8) << std::setfill('0') << std::hex << class_ << ", 0x" << hash_ << std::dec
@@ -148,22 +175,70 @@ int ObjectSymbol::writeAsm(std::ofstream &f, PartDataNOS &p)
   return size_;
 }
 
+void ObjectSymbol::makeAsmLabel(PartDataNOS &p) {
+  static char hex[] = "0123456789ABCDEF";
+  char buf[64];
+//  ::snprintf(buf, 31, "sym_%d_%s", p.index(), label_.c_str());
+  ::snprintf(buf, 63, "sym_%d_", p.index());
+  label_ = buf;
+  for (auto c: symbol_) {
+    if (::isalnum(c) || c=='_') {
+      label_ += c;
+    } else {
+      label_ += hex[c>>4];
+      label_ += hex[c&0x0f];
+    }
+  }
+}
+
+
 int ObjectSlotted::load(PackageBytes &p)
 {
   Object::load(p);
   int i = 0, n = size_/4-1;
   for ( ; i<n; ++i) {
-    ref_list_.push_back(p.get_uint());
+    ref_list_.push_back(p.get_ref());
   }
   return 0;
 }
 
 int ObjectSlotted::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
-  Object::writeAsm(f, p);
-  f << "\t" << p.asmRef(class_) << "\t@ class or map" << std::endl;
+  if (type_ == 1) {
+    f << "@ ----- " << offset_ << " Array (" << (size_/4)-1 << " entries)" << std::endl;
+    Object::writeAsm(f, p);
+    f << "\t" << p.asmRef(class_) << "\t@ class" << std::endl;
+  } else {
+    f << "@ ----- " << offset_ << " Frame (" << (size_/4)-1 << " entries)" << std::endl;
+    Object::writeAsm(f, p);
+    f << "\t" << p.asmRef(class_) << "\t@ map" << std::endl;
+  }
   for (auto &ref: ref_list_) {
     f << "\t" << p.asmRef(ref) << "\t@ ref" << std::endl;
+  }
+  return size_;
+}
+
+int ObjectMap::writeAsm(std::ofstream &f, PartDataNOS &p)
+{
+  f << "@ ----- " << offset_ << " Map (" << (size_/4)-2 << " entries)" << std::endl;
+  Object::writeAsm(f, p);
+  f << "\t" << p.asmRef(class_) << "\t@ flags" << std::endl;
+  // Flags can be 1 (kMapSorted), 2(kMapShared), 4 (kMapProto)
+  if (((class_>>2) & ~(1+2+4)) != 0)
+    std::cout << "WARNING: Unknown map flag set: " << (class_>>2) << std::endl;
+  if (ref_list_.size() > 0) {
+    f << "\t" << p.asmRef(ref_list_[0]) << "\t@ ref";
+// Yes, we use supermaps in Packages which will make life slightly harder
+//    if (ref_list_[0] != 0x00000002) {
+//      std::cout << "WARNING: map references a supermap!" << std::endl;
+//      f << " to SUPERMAP";
+//    }
+    f << std::endl;
+    int i, n = (int)ref_list_.size();
+    for (i=1; i<n; ++i) {
+      f << "\t" << p.asmRef(ref_list_[i]) << "\t@ ref" << std::endl;
+    }
   }
   return size_;
 }
@@ -179,7 +254,10 @@ int PartDataNOS::load(PackageBytes &p) {
   
   p.get_uint();
   uint32_t align_bit = p.get_uint();
-  if (align_bit & 0x00000001) align_ = 4;
+  if (align_bit & 0x00000001) {
+    align_ = 4;
+    align_fill_ = 0xbfbfbfbf;
+  }
   p.seek_set(start);
 
   while (p.tell() < n) {
@@ -187,8 +265,13 @@ int PartDataNOS::load(PackageBytes &p) {
     auto o = Object::peek(p, offset);
     o->load(p);
     object_list_[offset] = o;
-    p.align(align_);
+    o->loadPadding(p, start, align_);
   }
+
+  for (auto &obj: object_list_) {
+    obj.second->makeAsmLabel(*this);
+  }
+
   return 0;
 }
 
@@ -203,7 +286,11 @@ int PartDataNOS::writeAsm(std::ofstream &f) {
   f << std::endl;
   for (auto &obj: object_list_) {
     obj.second->writeAsm(f, *this);
-    f << "\t.balign\t" << align_ << ", 0xbf" << std::endl;
+//    if (align_ == 4) {
+//      f << "\t.balign\t" << align_ << ", 0xbf" << std::endl;
+//    } else {
+      write_data(f, obj.second->padding_);
+//    }
   }
   f << "\t.balign\t4" << std::endl << std::endl;
   return part_entry_.size();
@@ -217,7 +304,8 @@ std::string PartDataNOS::asmRef(uint32_t ref)
       ::snprintf(buf, 79, "ref_integer\t%d", ref/4);
       break;
     case 1: // pointer
-      ::snprintf(buf, 79, "ref_pointer\tobj_%d_%d", index(), ref & ~3);
+//      ::snprintf(buf, 79, "ref_pointer\tobj_%d_%d", index(), ref & ~3);
+      ::snprintf(buf, 79, "ref_pointer\t%s", object_list_[ref&~3]->label().c_str());
       break;
     case 2: // special
       if (ref == 2) {

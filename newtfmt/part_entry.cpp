@@ -40,8 +40,9 @@ int PartEntry::load(PackageBytes &p) {
   offset_ = p.get_uint();
   size_ = p.get_uint();
   size2_ = p.get_uint();
-  if (size_ != size2_)
-    std::cout << "WARNING: Part Entry " << index_ << ": Size and size2 differ.\n";
+  // As opposed to the documentation, size and size2 occasionally differ
+  //if (size_ != size2_)
+  //  std::cout << "WARNING: Part Entry " << index_ << ": Size and size2 differ.\n";
   type_ = p.get_cstring(4, false);
   // 'form' 'book' 'dict' 'auto' 'comm'
   if (type_=="book" || type_=="dict" || type_=="comm")

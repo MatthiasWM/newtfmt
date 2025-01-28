@@ -3,6 +3,9 @@
 
 #include "tools.h"
 
+#include <iostream>
+#include <fstream>
+
 using namespace ns;
 
 /**
@@ -66,6 +69,45 @@ uint16_t PackageBytes::get_ushort()
 uint32_t PackageBytes::get_uint() {
   uint32_t v;
   v = ((*it_++)<<24)|((*it_++)<<16)|((*it_++)<<8)|(*it_++);
+  return v;
+}
+
+/**
+ Get a 32 bit NS Ref and advance the iterator.
+ This outputs an error if the value is not a valid Ref.
+ \return a integer in the native byte order.
+ */
+uint32_t PackageBytes::get_ref() {
+  uint32_t v;
+  v = get_uint();
+  if ((v & 0x0000000f) == 0x00000002) { // 00.10 special
+    if (   (v != 0x00000002) // NIL
+        && (v != 0x00055552) // Symbol
+        && (v != 0x00000032) // kPlainFuncClass (2.x, 1.0 uses 'CodeBlock or 'binCFunction)
+        && (v != 0x00000132) // kPlainCFunctionClass (2.x native)
+        && (v != 0x00000232) // kBinCFunctionClass (2.x NCT, Newton C++ Toolbox)
+        ) {
+      std::cout << "WARNING: 0x"
+      << std::setw(8) << std::setfill('0') << std::hex << tell() << std::dec
+      << ": get_ref: unknown special ref: " << std::hex << v << std::dec << std::endl;
+    }
+  } else if ((v & 0x0000000f) == 0x00000006) { // 01.10 16 bit char
+    if ((v & 0xfff00000)!=0) {
+      std::cout << "WARNING: 0x"
+      << std::setw(8) << std::setfill('0') << std::hex << tell() << std::dec
+      << ": get_ref: invalid char: " << std::hex << v << std::dec << std::endl;
+    }
+  } else if ((v & 0x0000000f) == 0x0000000a) { // 10.10 boolean
+    if (v != 0x0000001a) { // TRUE
+      std::cout << "WARNING: 0x"
+      << std::setw(8) << std::setfill('0') << std::hex << tell() << std::dec
+      << ": get_ref: unknown boolean: " << std::hex << v << std::dec << std::endl;
+    }
+  } else if ((v & 0x0000000f) == 0x0000000e) { // 11.10 reserved
+    std::cout << "WARNING: 0x"
+    << std::setw(8) << std::setfill('0') << std::hex << tell() << std::dec
+    << ": get_ref: reserved ref: " << std::hex << v << std::dec << std::endl;
+  }
   return v;
 }
 
