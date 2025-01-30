@@ -25,7 +25,7 @@ const std::string gnu_as { "/opt/homebrew/bin/arm-none-eabi-as" };
 const std::string gnu_objcopy { "/opt/homebrew/bin/arm-none-eabi-objcopy" };
 
 //std::string input_pkg_name { "/Users/matt/Azureus/unna/games/Mines/Mines.pkg" };
-std::string input_pkg_name { "/Users/matt/Azureus/unna/games/Crypto1.1/crypex01.pkg" };
+std::string input_pkg_name { "/Users/matt/Azureus/unna/games/SuperNewtris2.0/SNewtris.pkg" };
 std::string pkg_name;
 
 ns::PackageBytes pkg_bytes;
@@ -78,6 +78,10 @@ int writeAsm(std::string assembler_file_name)
            << "\t.int\t\\label + 1\n"
            << "\t.endm\n\n";
 
+  asm_file << "\t.macro\tref_pointer_invalid offset\n"
+           << "\t.int\t\\offset\n"
+           << "\t.endm\n\n";
+
   asm_file << "\t.macro\tref_unichar value\n"
            << "\t.int\t((\\value)<<4)|10\n"
            << "\t.endm\n\n";
@@ -96,12 +100,16 @@ int writeAsm(std::string assembler_file_name)
 
 
   int skip = pkg.writeAsm(asm_file);
-  for (auto it = pkg_bytes.begin()+skip; it != pkg_bytes.end(); ++it) {
-    uint8_t b = *it;
-    asm_file << "\t.byte\t0x"
-             << std::setw(2) << std::setfill('0') << std::hex << (int)b
-             << "\t@ " << (char)( ((b > 32) && (b < 127)) ? b : '.' )
-             << std::endl;
+  if (skip < pkg_bytes.size()) {
+    std::cout << "WARNING: Package has " << pkg_bytes.size()-skip << " more bytes than defined." << std::endl;
+    asm_file << "@ ===== Extra data in file" << std::endl;
+    for (auto it = pkg_bytes.begin()+skip; it != pkg_bytes.end(); ++it) {
+      uint8_t b = *it;
+      asm_file << "\t.byte\t0x"
+      << std::setw(2) << std::setfill('0') << std::hex << (int)b
+      << "\t@ " << (char)( ((b > 32) && (b < 127)) ? b : '.' )
+      << std::endl;
+    }
   }
 
 //  std::cout << "writeAsm: Wrote \"" << assembler_file_name << "\"." << std::endl;
@@ -162,7 +170,8 @@ int compareBinaries(std::string new_package_name)
   if (new_file) {
     new_pkg.assign(std::istreambuf_iterator<char>{new_file}, {});
     if (new_pkg == pkg_bytes) {
-      std::cout << "compareBinaries: Packages are identical." << std::endl;
+//      std::cout << "compareBinaries: Packages are identical." << std::endl;
+      std::cout << "OK." << std::endl;
     } else {
       int i, n = std::min((int)new_pkg.size(), (int)pkg_bytes.size());
       for (i=0; i<n; ++i) {

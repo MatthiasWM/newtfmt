@@ -17,14 +17,54 @@ in the conversion process.
 
 ## Current Status
 
-The current implementation can read Package files and correctly interpret the 
-package header. It generates an ARM32 assembly file, which can be assembled 
+The current implementation can read Package files and interpret NOS parts
+correctly. It generates an ARM32 assembly file, which can be assembled 
 into an object file using the GNU assembler. The GNU objcopy tool can then 
 extract the .data segment as binary, effectively reconstructing 
 the original Package file.
 
 Extracting NewtonScript objects from NOS Parts within the Package works well 
-and they are written to the assembly file with labels.
+and they are written to the assembly file mostly with labels.
+
+## Findings
+
+### Duplicate Symbols
+
+Some NOS Parts defined the same Symbol multiple times. This is just some lack
+of optimization by NTK or another tool, possibly caused by the debug flag 
+being enabled and it is not harmful.
+
+### Non-ASCII Symbols
+
+I found exactly one package that uses a (tm) Mac Roman character in a symbol:
+"/Users/matt/Azureus/unna/games/SuperNewtris2.0/SNewtris.pkg"
+
+### Dirty Flag
+
+Some Objects in patches have the Dirty flag set. This seems to be specific 
+for system patches.
+
+### Schluberger Watson
+
+Schlumberger Packages have an additional Part of type Raw containing the 
+signature "xxxxSLB0Schlumberger Industries\0" and set the 
+kWatsonSignaturePresentFlag in the Package flags. Watson will not load a Package
+that does not have these modifications.  
+
+### Invalid References
+
+I found a few NOS Parts that contain Refs with invalid offsets. It seem that 
+all (or some) Refs have an offset at 0x60xxxxxx, suggesting they were extracted
+from a live installation. These references are generated when a package is read 
+back from Newton Memory and the relocation software (`rex`, for example), 
+misses the Ref. This is fixable if the original offset can be found and applied.
+
+Here are a few packages with that issue:
+
+- "/Users/matt/Azureus/unna/applications/calculator/GoFigure.pkg"
+- "/Users/matt/Azureus/unna/applications/Mapper/SF Mapv2.0-stk.pkg"
+- "/Users/matt/Azureus/unna/applications/ShiftWork2/ShiftWork2.pkg"
+- etc.
 
 ## Next Steps
 
@@ -33,20 +73,64 @@ numerical indexing. Achieving this will ensure that modifications — such as
 inserting or removing data — do not disrupt the structure of the Package, 
 even if addresses and offsets change dynamically.
 
-Fix duplicate symbols that have the same label. `Error: symbol `sym_0_viewFormat' is already defined`
+I want to make sure that all offsets and sizes are using labels and then
+verify that the packages still load and work correctly.
 
-List all subtypes, "book", etc. .  `WARNING: Part Entry 0: unknown type "auto"`
+Not sure if this is needed for relocation Data as well as it is rarely used
+(but if it *is* used, it seems to implement copy protection schemes).
 
-Can't create object file `"/Users/matt/Azureus/unna/applications/calculator/IPCalc1.1/ipcalc.pkg"`
+### Next I want to generate a Newton Object Tree from the binary data:
 
-No output at all: `/Users/matt/Azureus/unna/applications/calculator/GoFigure.pkg`
+[ ] generate Newton Object tree from package
+[ ] create package from Newton Object tree
+[ ] compare binary data from original package and Object Tree generated package
 
-Crash `"/Users/matt/Azureus/unna/applications/Mapper/CA State map v1.0.pkg"`
+### Next I want to be able to decompile and compile:
 
-Find a Watson package!
+- generate NewtonScript text from Object Tree, data only (no byte code, print 
+  binary objects in hex)
+- generate Object Tree from UTF-8 NewtonScript (simple compiler)
+- test by writing a Package from NewtonScript
 
-Despite the long list, we are very far and generate mostly identical files. 
-Very nice!
+### A little extra fun:
+
+At this point, we can add a reader and writer for ROM data pretty easily. We 
+may need some additions to NewtonScript to define Magic Pointers and find
+global addresses in ROM. 
+
+### Now we can incrementally improve the compiler and decompiler:
+
+- interpret binary data and write it in a more human readable format:
+  - find images and write them a png image files
+  - find sounds and write them as aif or similar
+  
+### Add the interpreter:
+  
+- read external data into the Object Tree
+  - add a function that reads a png image and generates a NewtonOS bitmap
+  - to integrate this into NewtonScript, we need a working interpreter
+  
+### Improve the decompiler:
+
+- write ByteCode into the NewtonScript text
+- read ByteCode in the compiler
+- incrementally improve the decompiler to write NewtonScript code instead 
+  of byte code
+- ensure that the generate NewtonScript generates the original ByteCode 
+  when compiled
+  
+### Add NTK functionality:
+
+NTK has a few more functions that we probably need to implement while doing the 
+steps above. Now is the point where we can implement everything needed to
+compile NTK projects. This would require readers for all NTK formats.
+
+### Add a NewtonOS environment:
+
+I know that this is last in the list, but I am sure that we will get a minimal
+OS environment running as soon as the interpreter works. Combined with a
+GUI library (hello FLTK), we can incrementally implement all widgets that our
+test apps need.  
 
 ## Long-Term Goals
 
@@ -69,5 +153,19 @@ Ultimately, "newtfmt" could evolve into a NewtonOS-compatible environment,
 making it possible to run NewtonScript applications natively 
 without requiring an emulator.
 
-— Matthias
+
+## Not on the List
+
+These issues are currently not in the scope of this app. Still the binary
+reader and writer recognizes those Parts and transfers them verbatim. 
+
+### Protocol Part:
+- "/Users/matt/Azureus/unna/applications/MADNewton1.0.1/MP3Codec.pkg"
+- etc.
+
+### Raw Parts:
+- "/Users/matt/Azureus/unna/applications/Fortunes/Science.pkg"
+- etc.
+
+ — Matthias
 

@@ -95,6 +95,7 @@ public:
 
 class PartDataNOS : public PartData {
   std::map<uint32_t, std::shared_ptr<Object>> object_list_;
+  std::map<std::string, ObjectSymbol*> label_list_;
   uint32_t align_{ 8 };
   uint32_t align_fill_{ 0xadbadbad };
 public:
@@ -103,6 +104,7 @@ public:
   int load(PackageBytes &p) override;
   int writeAsm(std::ofstream &f) override;
   std::string asmRef(uint32_t ref);
+  bool addLabel(std::string label, ObjectSymbol *symbol);
 };
 
 } // namespace ns

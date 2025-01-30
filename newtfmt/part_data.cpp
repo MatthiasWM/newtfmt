@@ -32,6 +32,7 @@ int PartDataGeneric::writeAsm(std::ofstream &f) {
   f << "@ ===== Part " << part_entry_.index() << " Data Generic" << std::endl;
   write_data(f, data_);
   f << "\t.balign\t4" << std::endl << std::endl;
+  f << "@ ===== Part " << part_entry_.index() << " End" << std::endl << std::endl;
   return part_entry_.size();
 }
 
@@ -88,10 +89,12 @@ int Object::load(PackageBytes &p)
   //  kObjLocked    = 0x10,
   //  kObjForward   = 0x20,
   //  kObjReadOnly  = 0x40,
-  //  kObjDirty     = 0x80,
+  //  kObjDirty     = 0x80 can be set in some cases
   flags_ = (header & 0x000000fc);
   if (flags_!=64) // Read Only
-    std::cout << "WARNING: NS Object flags should be 0x40." << std::endl;
+    std::cout << "WARNING: NS Object flags should be 0x40, but it's 0x"
+    << std::setw(2) << std::setfill('0') << std::hex << (header & 0x000000fc) << std::dec
+    << "." << std::endl;
   size_  = ((header >> 8) - 8);
   if (size_ < 0) {
     std::cout << "ERROR: NS Object size <0 found." << std::endl;
@@ -166,27 +169,52 @@ int ObjectSymbol::load(PackageBytes &p)
 
 int ObjectSymbol::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
+  static char hex[] = "0123456789ABCDEF";
   f << "@ ----- " << offset_ << " Symbol (" << size_-9 << " chars)" << std::endl;
   Object::writeAsm(f, p);
   f << "\t.int\t0x"
   << std::setw(8) << std::setfill('0') << std::hex << class_ << ", 0x" << hash_ << std::dec
   << "\t@ hash" << std::endl;
-  f << "\t.asciz\t\"" << symbol_ << "\"" << std::endl;
+
+  std::string ascii_symbol;
+  for (auto c: symbol_) {
+    if (::isprint(c)) {
+      ascii_symbol += c;
+    } else {
+      uint8_t h = (uint8_t)c;
+      ascii_symbol += "\\x";
+      ascii_symbol += hex[h>>4];
+      ascii_symbol += hex[h&0x0f];
+    }
+  }
+
+  f << "\t.asciz\t\"" << ascii_symbol << "\"" << std::endl;
   return size_;
 }
 
 void ObjectSymbol::makeAsmLabel(PartDataNOS &p) {
   static char hex[] = "0123456789ABCDEF";
-  char buf[64];
+  char buf[128];
 //  ::snprintf(buf, 31, "sym_%d_%s", p.index(), label_.c_str());
-  ::snprintf(buf, 63, "sym_%d_", p.index());
+  ::snprintf(buf, sizeof(buf)-1, "sym_%d_", p.index());
   label_ = buf;
+  std::string ascii_label;
   for (auto c: symbol_) {
-    if (::isalnum(c) || c=='_') {
+    if ( ::isalnum(c) || (c=='_') ) {
       label_ += c;
     } else {
-      label_ += hex[c>>4];
-      label_ += hex[c&0x0f];
+      uint8_t h = (uint8_t)c;
+      label_ += hex[h>>4];
+      label_ += hex[h&0x0f];
+    }
+  }
+  if (p.addLabel(label_, this)==false) {
+    strncpy(buf, label_.c_str(), sizeof(buf)-7);
+    int ins = (int)strlen(buf);
+    for (int i=2; ; i++) {
+      snprintf(buf+ins, 6, "_%d", i);
+      label_ = buf;
+      if (p.addLabel(label_, this)) break;
     }
   }
 }
@@ -293,6 +321,7 @@ int PartDataNOS::writeAsm(std::ofstream &f) {
 //    }
   }
   f << "\t.balign\t4" << std::endl << std::endl;
+  f << "@ ===== Part " << part_entry_.index() << " End" << std::endl << std::endl;
   return part_entry_.size();
 }
 
@@ -305,7 +334,12 @@ std::string PartDataNOS::asmRef(uint32_t ref)
       break;
     case 1: // pointer
 //      ::snprintf(buf, 79, "ref_pointer\tobj_%d_%d", index(), ref & ~3);
-      ::snprintf(buf, 79, "ref_pointer\t%s", object_list_[ref&~3]->label().c_str());
+      if (object_list_.find(ref&~3) != object_list_.end()) {
+        ::snprintf(buf, 79, "ref_pointer\t%s", object_list_[ref&~3]->label().c_str());
+      } else {
+        std::cout << "WARNING: Invalid reference to offset " << (ref&~3) << "." << std::endl;
+        ::snprintf(buf, 79, "ref_pointer_invalid\t0x%08x", ref);
+      }
       break;
     case 2: // special
       if (ref == 2) {
@@ -329,3 +363,13 @@ std::string PartDataNOS::asmRef(uint32_t ref)
   return std::string(buf);
 }
 
+bool PartDataNOS::addLabel(std::string label, ObjectSymbol *symbol) {
+  if (label_list_.find(label) == label_list_.end()) {
+    // not found, add the label
+    label_list_[label] = symbol;
+    return true;
+  } else {
+    // already in list, caller may try again with another label
+    return false;
+  }
+}

@@ -45,15 +45,13 @@ int PartEntry::load(PackageBytes &p) {
   //  std::cout << "WARNING: Part Entry " << index_ << ": Size and size2 differ.\n";
   type_ = p.get_cstring(4, false);
   // 'form' 'book' 'dict' 'auto' 'comm'
-  if (type_=="book" || type_=="dict" || type_=="comm")
-    std::cout << "WARNING: Part Entry " << index_ << ": unsupported type \"" << type_ << "\"\n";
-  if (type_!="form" && type_!="book" && type_!="dict" && type_!="comm")
-    std::cout << "WARNING: Part Entry " << index_ << ": unknown type \"" << type_ << "\"\n";
+  // Foud: "auto", "", "soup", "book", "cdhl", "prnt"
+//  if (type_=="book" || type_=="dict" || type_=="comm")
+//    std::cout << "WARNING: Part Entry " << index_ << ": unsupported type \"" << type_ << "\"\n";
+//  if (type_!="form" && type_!="book" && type_!="dict" && type_!="comm")
+//    std::cout << "WARNING: Part Entry " << index_ << ": unknown type \"" << type_ << "\"\n";
   reserved_ = p.get_uint();
   flags_ = p.get_uint();
-  if ((flags_ & 3) == 3)
-    std::cout << "WARNING: Part Entry " << index_ << ": unknown type in flags: "
-    << (flags_ & 3) << std::endl;
   if (flags_ & 0xfffffe0c)
     std::cout << "WARNING: Part Entry " << index_ << ": unknown flag: "
     << std::setw(8) << std::setfill('0') << std::hex
@@ -63,10 +61,23 @@ int PartEntry::load(PackageBytes &p) {
   compressor_offset_ = p.get_ushort();
   compressor_length_ = p.get_ushort();
 
-  if ((flags_ & 3) == 1) // kNOSPart
-    part_data_ = std::make_shared<PartDataNOS>(*this);
-  else
-    part_data_ = std::make_shared<PartDataGeneric>(*this);
+  switch (flags_ & 3) {
+    case 0: // kProtocolPart (found in Apple packages)
+      std::cout << "WARNING: Protocol Parts not yet understood." << std::endl;
+      part_data_ = std::make_shared<PartDataGeneric>(*this);
+      break;
+    case 1: // kNOSPart
+      part_data_ = std::make_shared<PartDataNOS>(*this);
+      break;
+    case 2: // kRawPart
+      std::cout << "WARNING: Raw Parts not yet understood." << std::endl;
+      part_data_ = std::make_shared<PartDataGeneric>(*this);
+      break;
+    case 3: // kPackagePart
+      std::cout << "WARNING: Package Parts in Packages not yet understood." << std::endl;
+      part_data_ = std::make_shared<PartDataGeneric>(*this);
+      break;
+  }
 
   return 0;
 }

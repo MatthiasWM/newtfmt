@@ -33,7 +33,7 @@ class Package {
   uint32_t vdata_start_ {0};
   uint32_t info_start_ {0};
   uint32_t info_length_ {0};
-  std::vector<PartEntry> part_;
+  std::vector<std::shared_ptr<PartEntry>> part_;
   std::string copyright_;
   std::string name_;
   std::vector<uint8_t> info_;

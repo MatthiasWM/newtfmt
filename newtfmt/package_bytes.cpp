@@ -82,28 +82,33 @@ uint32_t PackageBytes::get_ref() {
   v = get_uint();
   if ((v & 0x0000000f) == 0x00000002) { // 00.10 special
     if (   (v != 0x00000002) // NIL
-        && (v != 0x00055552) // Symbol
+//      && (v != 0x00000012) // kWeakArrayClass, used for caching Soup data
+//      && (v != 0x00000022) // kFaultBlockClass, also Store related
         && (v != 0x00000032) // kPlainFuncClass (2.x, 1.0 uses 'CodeBlock or 'binCFunction)
         && (v != 0x00000132) // kPlainCFunctionClass (2.x native)
         && (v != 0x00000232) // kBinCFunctionClass (2.x NCT, Newton C++ Toolbox)
+//      && (v != 0x00000042) // kBadPackageRef, generated if objects are moved, but Ref is not in moving range
+//      && (v != 0x00000052) // kUnstreamableObject, a large binary object without function block, can't be streamed to NSOF
+        && (v != 0x00055552) // Symbol
+//      && (v != 0x0000FFF2) // kNewtRefUnbind, (newt/0) Ref is not initialized or bound to anything
         ) {
       std::cout << "WARNING: 0x"
       << std::setw(8) << std::setfill('0') << std::hex << tell() << std::dec
       << ": get_ref: unknown special ref: " << std::hex << v << std::dec << std::endl;
     }
-  } else if ((v & 0x0000000f) == 0x00000006) { // 01.10 16 bit char
+  } else if ((v & 0x0000000f) == 0x00000006) { // b01`10 16 bit char
     if ((v & 0xfff00000)!=0) {
       std::cout << "WARNING: 0x"
       << std::setw(8) << std::setfill('0') << std::hex << tell() << std::dec
       << ": get_ref: invalid char: " << std::hex << v << std::dec << std::endl;
     }
-  } else if ((v & 0x0000000f) == 0x0000000a) { // 10.10 boolean
+  } else if ((v & 0x0000000f) == 0x0000000a) { // b10`10 boolean
     if (v != 0x0000001a) { // TRUE
       std::cout << "WARNING: 0x"
       << std::setw(8) << std::setfill('0') << std::hex << tell() << std::dec
       << ": get_ref: unknown boolean: " << std::hex << v << std::dec << std::endl;
     }
-  } else if ((v & 0x0000000f) == 0x0000000e) { // 11.10 reserved
+  } else if ((v & 0x0000000f) == 0x0000000e) { // b11`10 reserved
     std::cout << "WARNING: 0x"
     << std::setw(8) << std::setfill('0') << std::hex << tell() << std::dec
     << ": get_ref: reserved ref: " << std::hex << v << std::dec << std::endl;

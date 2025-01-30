@@ -44,9 +44,10 @@ relocation data.
 
 ## Package Parts
 
-Package Parts can have three basic formats, "Protocol", "NOS", or "Raw". The
-documentation describes only NOS parts. We still have to find out about the
-other parts.
+Package Parts can have four possible types, "Protocol", "NOS", "Raw", or
+"Package". The documentation describes only NOS parts. We still have to find 
+out about more the other parts. From what I gathered, Packages within Packages
+are the NewtonOS version of C++ object files that can be used for linking.
 
 ## NOS Parts
 
