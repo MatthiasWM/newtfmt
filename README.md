@@ -81,9 +81,9 @@ Not sure if this is needed for relocation Data as well as it is rarely used
 
 ### Next I want to generate a Newton Object Tree from the binary data:
 
-[ ] generate Newton Object tree from package
-[ ] create package from Newton Object tree
-[ ] compare binary data from original package and Object Tree generated package
+- generate Newton Object tree from package
+- create package from Newton Object tree
+- compare binary data from original package and Object Tree generated package
 
 ### Next I want to be able to decompile and compile:
 
