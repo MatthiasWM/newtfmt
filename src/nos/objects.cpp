@@ -18,3 +18,5 @@
 
 
 #include "nos/objects.h"
+
+using namespace nos;

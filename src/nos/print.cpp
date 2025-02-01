@@ -16,37 +16,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "nos/print.h"
 
-#ifndef NEWTFMT_PACKAGE_PACKAGE_BYTES_H
-#define NEWTFMT_PACKAGE_PACKAGE_BYTES_H
+#include "nos/types.h"
+#include "nos/refs.h"
 
-#include <ios>
-#include <cstdlib>
-#include <vector>
+using namespace nos;
 
-namespace pkg {
-
-class PackageBytes : public std::vector<uint8_t>
+PrintState::PrintState(FILE *fout)
+  : out_(fout)
 {
-  PackageBytes::iterator it_;
+}
 
-public:
-  PackageBytes() = default;
-  void rewind();
-  void seek_set(int ix);
-  int tell();
-  bool eof();
-  uint8_t get_ubyte();
-  uint16_t get_ushort();
-  uint32_t get_uint();
-  uint32_t get_ref();
-  std::string get_cstring(int n, bool trailing_nul=true);
-  std::string get_ustring(int n, bool trailing_nul=true);
-  std::vector<uint8_t> get_data(int n);
-  void align(int n);
-};
+PrintState::~PrintState()
+{
+}
 
-}; // namespace pkg
 
-#endif // NEWTFMT_PACKAGE_PACKAGE_BYTES_H
+/**
+ Print any Ref.
+ */
+void nos::Print(RefArg p)
+{
+  PrintState state(stdout);
+  p.Print(state);
+}
 

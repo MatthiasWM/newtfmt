@@ -20,5 +20,27 @@
 #ifndef NEWTFMT_NOS_REFS_H
 #define NEWTFMT_NOS_REFS_H
 
+#include "nos/types.h"
+
+#include "nos/print.h"
+
+namespace nos {
+
+class Ref {
+  union {
+    Ptr ptr_;
+    Integer integer_;
+  } u;
+  uint8_t type_;
+public:
+  Ref();
+  Ref(Integer i);
+  ~Ref();
+  int Print(PrintState &ps) const;
+  void AddArraySlot(RefArg value) const;
+};
+
+} // namespace nos
+
 #endif // NEWTFMT_NOS_REFS_H
 

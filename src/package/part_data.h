@@ -17,8 +17,8 @@
  */
 
 
-#ifndef NEWTFMT_PART_DATA_H
-#define NEWTFMT_PART_DATA_H
+#ifndef NEWTFMT_PACKAGE_PART_DATA_H
+#define NEWTFMT_PACKAGE_PART_DATA_H
 
 #include <ios>
 #include <cstdlib>
@@ -126,4 +126,4 @@ public:
 
 } // namespace pkg
 
-#endif // NEWTFMT_PART_DATA_H
+#endif // NEWTFMT_PACKAGE_PART_DATA_H

@@ -20,5 +20,32 @@
 #ifndef NEWTFMT_NOS_OBJECTS_H
 #define NEWTFMT_NOS_OBJECTS_H
 
+namespace nos {
+
+class Object {
+  //  Integer ref_count_;
+  //  uint8_t type_;
+  //  uint8_t flags_;
+public:
+  Object() = default;
+};
+
+class BinaryObject : public Object {
+};
+
+class Symbol : public Object {
+};
+
+class SlottedObject : public Object {
+};
+
+class Array : public SlottedObject {
+};
+
+class Frame : public SlottedObject {
+};
+
+} // namespace nos
+
 #endif // NEWTFMT_NOS_OBJECTS_H
 

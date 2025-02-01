@@ -28,7 +28,12 @@
 #include <memory>
 #include <string>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
+/**
+ Convert a Unicode UTF-16 string into UTF-8 byte sequence.
+ */
 std::string utf16_to_utf8(std::u16string &wstr) {
   return std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(wstr);
 }
@@ -36,6 +41,8 @@ std::string utf16_to_utf8(std::u16string &wstr) {
 std::u16string utf8_to_utf16(std::string &str) {
   return std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(str);
 }
+
+#pragma clang diagnostic pop
 
 int write_utf16(std::ofstream &f, std::string &u8str) {
   f << "\t@ \"" << u8str << "\"" << std::endl;

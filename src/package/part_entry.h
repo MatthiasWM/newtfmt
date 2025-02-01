@@ -17,8 +17,8 @@
  */
 
 
-#ifndef NEWTFMT_PART_ENTRY_H
-#define NEWTFMT_PART_ENTRY_H
+#ifndef NEWTFMT_PACKAGE_PART_ENTRY_H
+#define NEWTFMT_PACKAGE_PART_ENTRY_H
 
 #include <iostream>
 #include <fstream>
@@ -58,5 +58,5 @@ public:
 
 } // namespace pkg
 
-#endif // NEWTFMT_PART_ENTRY_H
+#endif // NEWTFMT_PACKAGE_PART_ENTRY_H
 

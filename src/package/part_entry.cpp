@@ -24,6 +24,10 @@
 
 using namespace pkg;
 
+/** \class pkg::PartEntry
+ The directory entry for each part in the package file.
+ */
+
 /**
  Hold all the Part attributes, but not the Part Data.
  \param[in] ix index within the Package Part list

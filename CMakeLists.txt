@@ -8,7 +8,7 @@ if (POLICY CMP0025)
   cmake_policy(SET CMP0025 NEW)
 endif ()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -27,8 +27,6 @@ set(PACKAGE_SRCS
   src/package/part_entry.cpp
   src/package/part_data.h
   src/package/part_data.cpp
-  src/package/tools.h
-  src/package/tools.cpp
 )
 
 set(NOS_SRCS
@@ -38,6 +36,13 @@ set(NOS_SRCS
   src/nos/objects.cpp
   src/nos/refs.h
   src/nos/refs.cpp
+  src/nos/print.h
+  src/nos/print.cpp
+)
+
+set(TOOLS_SRCS
+  src/tools/tools.h
+  src/tools/tools.cpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -45,6 +50,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}
     ${SRCS}
     ${PACKAGE_SRCS}
     ${NOS_SRCS}
+    ${TOOLS_SRCS}
 )
 
 add_executable(
@@ -54,6 +60,7 @@ add_executable(
   ${SRCS}
   ${PACKAGE_SRCS}
   ${NOS_SRCS}
+  ${TOOLS_SRCS}
   # other files for quick access
   README.md
   Package.md

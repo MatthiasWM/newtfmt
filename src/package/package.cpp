@@ -21,7 +21,7 @@
 
 #include "package_bytes.h"
 #include "part_entry.h"
-#include "tools.h"
+#include "tools/tools.h"
 
 using namespace pkg;
 

@@ -22,7 +22,11 @@
 #include "package/part_data.h"
 #include "package/part_entry.h"
 #include "package/relocation_data.h"
-#include "package/tools.h"
+
+#include "nos/refs.h"
+#include "nos/objects.h"
+
+#include "tools/tools.h"
 
 #include <iostream>
 #include <fstream>
@@ -204,7 +208,7 @@ int compareBinaries(std::string new_package_name)
  Run our application with hardcoded file names for now.
  \param[in] argc, argv
  */
-int main(int argc, const char * argv[])
+int main_package_test(int argc, const char * argv[])
 {
   if (argc==2) {
     input_pkg_name = argv[1];
@@ -229,5 +233,13 @@ int main(int argc, const char * argv[])
     std::cout << "ERROR comparing the original package and the new package." << std::endl;
     return 0;
   }
+  return 0;
+}
+
+int main(int argc, const char * argv[])
+{
+  (void)argc; (void)argv;
+  nos::Ref t = nos::MakeInt(4711);
+  nos::Print(t);
   return 0;
 }

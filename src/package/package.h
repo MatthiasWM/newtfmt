@@ -17,8 +17,8 @@
  */
 
 
-#ifndef NEWTFMT_PACKAGE_H
-#define NEWTFMT_PACKAGE_H
+#ifndef NEWTFMT_PACKAGE_PACKAGE_H
+#define NEWTFMT_PACKAGE_PACKAGE_H
 
 #include <iostream>
 #include <fstream>
@@ -64,6 +64,6 @@ public:
 
 } // namespace pkg
 
-#endif // NEWTFMT_PACKAGE_H
+#endif // NEWTFMT_PACKAGES_PACKAGE_H
 
 

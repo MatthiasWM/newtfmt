@@ -21,7 +21,7 @@
 
 #include "package_bytes.h"
 #include "part_entry.h"
-#include "tools.h"
+#include "tools/tools.h"
 
 #include <iostream>
 #include <fstream>
@@ -40,7 +40,6 @@ using namespace pkg;
 int PartData::index() {
   return part_entry_.index();
 }
-
 
 /** \class pkg::PartDataGeneric
  Holds the uninterpreted data of a Part with raw data or unknown type.
@@ -71,7 +70,7 @@ int PartDataGeneric::writeAsm(std::ofstream &f) {
 
 
 /** \class pkg::Object
- 
+ Any kind of Object from the Newton Object System.
  */
 
 /**
@@ -109,6 +108,11 @@ std::shared_ptr<Object> Object::peek(PackageBytes &p, uint32_t offset)
   }
 }
 
+/**
+ Load the head of an Object; derived class must load the remaining data.
+ \parm[in] p reference to the biary data
+ \return 0 if successful
+ */
 int Object::load(PackageBytes &p)
 {
   uint32_t header = p.get_uint();
@@ -140,7 +144,12 @@ int Object::load(PackageBytes &p)
   return 0;
 }
 
-// If the data is unaligned, load the filler bytes.
+/**
+ If the data is unaligned, load the filler bytes.
+ \param[in] p raw package data stream
+ \param[in] start position of first byte of the current part in the package data
+ \param[in] align align to 4 bytes (NewtonOS 2.x) or 8 bytes (NewtonOS 1.x)
+ */
 void Object::loadPadding(PackageBytes &p, uint32_t start, uint32_t align) {
   align--;
   uint32_t fpos = p.tell() - start;
@@ -149,7 +158,13 @@ void Object::loadPadding(PackageBytes &p, uint32_t start, uint32_t align) {
   if (n) padding_ = p.get_data(n);
 }
 
-
+/**
+ Write the common header data of an NOS object.
+ The caption and the actual data is written by the derived class.
+ \param[in] f assembler file output stream
+ \param[in] p back reference to part data
+ \return number of bytes written
+ */
 int Object::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
   (void)p;
@@ -159,13 +174,25 @@ int Object::writeAsm(std::ofstream &f, PartDataNOS &p)
   return 8;
 }
 
+/**
+ Generate a simple assembler label using the part index and the offset in the package file.
+ \param[in] p Part data reference.
+ */
 void Object::makeAsmLabel(PartDataNOS &p) {
   char buf[32];
   ::snprintf(buf, 31, "obj_%d_%d", p.index(), offset_);
   label_ = buf;
 }
 
+/** \class pkg::Object
+ A Binary Object from the Newton Object System.
+ */
 
+/**
+ Read a binary object form the Package stream.
+ \param[in] p package data stream
+ \return 0 if succeeded
+ */
 int ObjectBinary::load(PackageBytes &p)
 {
   Object::load(p);
@@ -173,6 +200,16 @@ int ObjectBinary::load(PackageBytes &p)
   return 0;
 }
 
+/**
+ Write a binary object in assembler code.
+ We could look at the Class entry of the object to find the actual type and
+ write the data in a better understandable format. For example, this is
+ used for storing floating point data (class = 'real), so we could instead
+ just print one FP value.
+ \param[in] f assembler file output stream
+ \param[in] p back reference to part data
+ \return number of bytes written
+ */
 int ObjectBinary::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
   f << "@ ----- " << offset_ << " Binary Object (" << size_-4 << " bytes)" << std::endl;
@@ -182,6 +219,15 @@ int ObjectBinary::writeAsm(std::ofstream &f, PartDataNOS &p)
   return size_;
 }
 
+/** \class pkg::ObjectSymbol
+ A Symbol from the Newton Object System.
+ */
+
+/**
+ Read a symbol form the Package stream.
+ \param[in] p package data stream
+ \return 0 if succeeded
+ */
 int ObjectSymbol::load(PackageBytes &p)
 {
   Object::load(p);
@@ -203,6 +249,12 @@ int ObjectSymbol::load(PackageBytes &p)
   return 0;
 }
 
+/**
+ Write a Symbol in assembler code.
+ \param[in] f assembler file output stream
+ \param[in] p back reference to part data
+ \return number of bytes written
+ */
 int ObjectSymbol::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
   static char hex[] = "0123456789ABCDEF";
@@ -228,6 +280,18 @@ int ObjectSymbol::writeAsm(std::ofstream &f, PartDataNOS &p)
   return size_;
 }
 
+/**
+ Create an assembler label for this symbol.
+
+ Symbols can contain characters that are not legal for labels, so we replace
+ those with their hex value. We then check the generated label, and if there is
+ already the same label in the file, generate a new label by adding and then
+ incrementing a counter at the end of the label.
+
+ The label is then stored with the symbol.
+
+ \param[in] p back reference to part data
+ */
 void ObjectSymbol::makeAsmLabel(PartDataNOS &p) {
   static char hex[] = "0123456789ABCDEF";
   char buf[128];
@@ -255,7 +319,15 @@ void ObjectSymbol::makeAsmLabel(PartDataNOS &p) {
   }
 }
 
+/** \class pkg::ObjectSlotted
+ A Slotted Object (Frame or Array) from the Newton Object System.
+ */
 
+/**
+ Read a slotted object (Frame or Array) form the Package stream.
+ \param[in] p package data stream
+ \return 0 if succeeded
+ */
 int ObjectSlotted::load(PackageBytes &p)
 {
   Object::load(p);
@@ -266,6 +338,12 @@ int ObjectSlotted::load(PackageBytes &p)
   return 0;
 }
 
+/**
+ Write a slotted object (a Form or an Array) in assembler code.
+ \param[in] f assembler file output stream
+ \param[in] p back reference to part data
+ \return number of bytes written
+ */
 int ObjectSlotted::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
   if (type_ == 1) {
@@ -283,6 +361,16 @@ int ObjectSlotted::writeAsm(std::ofstream &f, PartDataNOS &p)
   return size_;
 }
 
+/** \class pkg::ObjectMap
+ An Array of Symbols, as used by the Frame Object to create named indexing.
+ */
+
+/**
+ Write a Frame lookup map object in assembler code.
+ \param[in] f assembler file output stream
+ \param[in] p back reference to part data
+ \return number of bytes written
+ */
 int ObjectMap::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
   f << "@ ----- " << offset_ << " Map (" << (size_/4)-2 << " entries)" << std::endl;
@@ -292,7 +380,7 @@ int ObjectMap::writeAsm(std::ofstream &f, PartDataNOS &p)
   if (((class_>>2) & ~(1+2+4)) != 0)
     std::cout << "WARNING: Unknown map flag set: " << (class_>>2) << std::endl;
   if (ref_list_.size() > 0) {
-    f << "\t" << p.asmRef(ref_list_[0]) << "\t@ ref";
+    f << "\t" << p.asmRef(ref_list_[0]) << "\t@ supermap";
 // Yes, we use supermaps in Packages which will make life slightly harder
 //    if (ref_list_[0] != 0x00000002) {
 //      std::cout << "WARNING: map references a supermap!" << std::endl;
@@ -306,6 +394,10 @@ int ObjectMap::writeAsm(std::ofstream &f, PartDataNOS &p)
   }
   return size_;
 }
+
+/** \class pkg::PartDataNOS
+ All the data in a NOS Part of the Package.
+ */
 
 /**
  Read the NOS Part of the Package as a list of Objects.
@@ -361,6 +453,11 @@ int PartDataNOS::writeAsm(std::ofstream &f) {
   return part_entry_.size();
 }
 
+/**
+ Return the start of an assembler line that will produce the given Ref.
+ \param[in] ref a valid Ref
+ \return[in] a temporary string with the assembler code
+ */
 std::string PartDataNOS::asmRef(uint32_t ref)
 {
   static char buf[80];
@@ -399,6 +496,22 @@ std::string PartDataNOS::asmRef(uint32_t ref)
   return std::string(buf);
 }
 
+/**
+ Try to add a label to the list of unique labels.
+
+ This is used to make labels unique within the part. The method is called
+ with a suggestion for a label text. If the label is taken, it will return
+ false, giving the caller the opportunity to try again with a modified label,
+ for example by adding a number that increments until the label is unique.
+ If the label is not yet taken, it is added to the list and true is retuned.
+
+ \note The label text and the symbol text may be different to match requirements
+ of the assembler and to make the unique if the same symbol exists
+ more than once.
+
+ \param[in] label ASCII string
+ \param[in] symbol if the label is unique, it will reference this symbol
+ */
 bool PartDataNOS::addLabel(std::string label, ObjectSymbol *symbol) {
   if (label_list_.find(label) == label_list_.end()) {
     // not found, add the label

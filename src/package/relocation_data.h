@@ -17,8 +17,8 @@
  */
 
 
-#ifndef NEWTFMT_RELOCATION_DATA_H
-#define NEWTFMT_RELOCATION_DATA_H
+#ifndef NEWTFMT_PACKAGE_RELOCATION_DATA_H
+#define NEWTFMT_PACKAGE_RELOCATION_DATA_H
 
 #include <iostream>
 #include <fstream>
@@ -28,15 +28,6 @@
 namespace pkg {
 
 class PackageBytes;
-
-// TODO: Relocation Set
-//      repeat num_entries_
-//      .balign 4
-//      struct RelocationSet {
-//        UShort pageNumber;
-//        UShort offsetCount;
-//        /* Byte offsets[]; */
-//      };
 
 class RelocationSet {
   uint16_t page_number_{ 0 };
@@ -65,5 +56,5 @@ public:
 
 } // namespace pkg
 
-#endif
+#endif // NEWTFMT_PACKAGE_RELOCATION_DATA_H
 

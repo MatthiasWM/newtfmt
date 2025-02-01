@@ -19,3 +19,5 @@
 
 #include "nos/types.h"
 
+using namespace nos;
+

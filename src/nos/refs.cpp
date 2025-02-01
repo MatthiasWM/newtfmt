@@ -19,3 +19,36 @@
 
 #include "nos/refs.h"
 
+using namespace nos;
+
+constexpr uint8_t kRefTypeUnref = 0;
+constexpr uint8_t kRefTypeInt = 1;
+
+
+Ref::Ref() {
+  type_ = kRefTypeUnref;
+  u.ptr_ = nullptr;
+}
+
+Ref::Ref(Integer i) {
+  type_ = kRefTypeInt;
+  u.integer_ = i;
+}
+
+Ref::~Ref() {
+}
+
+int Ref::Print(PrintState &ps) const {
+  switch (type_) {
+    case kRefTypeInt:
+      fprintf(ps.out_, "%ld\n", u.integer_);
+      break;
+    default:
+      fprintf(ps.out_, "<unknown>\n");
+  }
+  return 0;
+}
+
+Ref nos::MakeInt(Integer i) {
+  return Ref(i);
+}

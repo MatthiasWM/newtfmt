@@ -20,11 +20,19 @@
 #include "relocation_data.h"
 
 #include "package_bytes.h"
-#include "tools.h"
+#include "tools/tools.h"
 
 using namespace pkg;
 
+/** \class pkg::RelocationSet
+ One array of up to 256 location where a word of data must be fixed to be
+ relative to the relocation base.
+ */
 
+/**
+ Load a single package and word-align the input stream.
+ \param[in] p Reference to the package data stream.
+ */
 int RelocationSet::load(PackageBytes &p)
 {
   page_number_ = p.get_ushort();
@@ -38,6 +46,15 @@ int RelocationSet::load(PackageBytes &p)
   return 0;
 }
 
+/**
+ Write the relocation set to the assembler file.
+
+ \note This does not use labels, so the result may be false if data changes its
+ position (bytes are inserted or deleted).
+
+ \param[in] f write to this text stream
+ \return number of bytes converted to assembler
+ */
 int RelocationSet::writeAsm(std::ofstream &f)
 {
   f << "@ ----- Relocation Set" << std::endl;
@@ -52,6 +69,9 @@ int RelocationSet::writeAsm(std::ofstream &f)
   return (int)(4 + offset_list_.size() + padding_.size());
 }
 
+/** \class pkg:RelcationData
+ Header data set for all relocation data.
+ */
 
 /**
  Read relocation data from the package.
