@@ -12,8 +12,11 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(SRCS
+  src/main.cpp
+)
+
 set(PACKAGE_SRCS
-  src/package/main.cpp
   src/package/package_bytes.h
   src/package/package_bytes.cpp
   src/package/package.h
@@ -28,13 +31,29 @@ set(PACKAGE_SRCS
   src/package/tools.cpp
 )
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PACKAGE_SRCS})
+set(NOS_SRCS
+  src/nos/types.h
+  src/nos/types.cpp  
+  src/nos/objects.h
+  src/nos/objects.cpp
+  src/nos/refs.h
+  src/nos/refs.cpp
+)
+
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}
+  FILES
+    ${SRCS}
+    ${PACKAGE_SRCS}
+    ${NOS_SRCS}
+)
 
 add_executable(
   # executable name
   newtfmt
   # source files
+  ${SRCS}
   ${PACKAGE_SRCS}
+  ${NOS_SRCS}
   # other files for quick access
   README.md
   Package.md
@@ -45,7 +64,8 @@ set_source_files_properties(Package.md PROPERTIES HEADER_FILE_ONLY TRUE)
 
 target_include_directories(
   newtfmt
-  src
+  PUBLIC
+    src
 )
 
 if(MSVC)

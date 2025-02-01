@@ -1,17 +1,28 @@
-//
-//  main.cpp
-//  newtfmt
-//
-//  Created by Matthias Melcher on 24.01.25.
-//
+/*
+ * newtfmt, working title, a Newton Script file reader and writer
+ * Copyright (C) 2025  Matthias Melcher
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 
-#include "package.h"
-#include "package_bytes.h"
-#include "part_data.h"
-#include "part_entry.h"
-#include "relocation_data.h"
-#include "tools.h"
+#include "package/package.h"
+#include "package/package_bytes.h"
+#include "package/part_data.h"
+#include "package/part_entry.h"
+#include "package/relocation_data.h"
+#include "package/tools.h"
 
 #include <iostream>
 #include <fstream>
@@ -101,7 +112,7 @@ int writeAsm(std::string assembler_file_name)
 
 
   int skip = my_pkg.writeAsm(asm_file);
-  if (skip < my_pkg_bytes.size()) {
+  if (skip < (int)my_pkg_bytes.size()) {
     std::cout << "WARNING: Package has " << my_pkg_bytes.size()-skip << " more bytes than defined." << std::endl;
     asm_file << "@ ===== Extra data in file" << std::endl;
     for (auto it = my_pkg_bytes.begin()+skip; it != my_pkg_bytes.end(); ++it) {
