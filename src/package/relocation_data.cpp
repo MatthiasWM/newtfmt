@@ -6,7 +6,7 @@
 #include "package_bytes.h"
 #include "tools.h"
 
-using namespace ns;
+using namespace pkg;
 
 
 int RelocationSet::load(PackageBytes &p)

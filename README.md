@@ -167,5 +167,11 @@ reader and writer recognizes those Parts and transfers them verbatim.
 - "/Users/matt/Azureus/unna/applications/Fortunes/Science.pkg"
 - etc.
 
+
+## History
+
+- Jan '25: initial commit, package to binary, binary to asm, asm to package
+- Feb '25: adding Newton Object System, nos
+
  — Matthias
 

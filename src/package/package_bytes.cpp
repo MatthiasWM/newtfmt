@@ -6,7 +6,11 @@
 #include <iostream>
 #include <fstream>
 
-using namespace ns;
+using namespace pkg;
+
+/** \class pkg::PackageBytes
+ Streaming access to the 32bit MSB data in a NewtonScript Package.
+ */
 
 /**
  Set the iterator back to the first byte.

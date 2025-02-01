@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <vector>
 
-namespace ns {
+namespace pkg {
 
 class PackageBytes : public std::vector<uint8_t>
 {
@@ -31,7 +31,7 @@ public:
   void align(int n);
 };
 
-}; // namespace ns
+}; // namespace pkg
 
 #endif // NEWTFMT_PACKAGE_BYTES_H
 

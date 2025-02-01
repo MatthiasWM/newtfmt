@@ -5,10 +5,14 @@
 #include "part_entry.h"
 #include "tools.h"
 
-using namespace ns;
+using namespace pkg;
+
+/** \class pkg::Package
+ Read, store, and write the binary data in NewtonScript Package format.
+ */
 
 /**
- Read the Package.
+ Load the entire package and store the content in memory.
  \param[in] p package data stream
  \return 0 if succeeded
  */

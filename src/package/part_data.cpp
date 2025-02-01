@@ -11,7 +11,24 @@
 #include <fstream>
 #include <ios>
 
-using namespace ns;
+using namespace pkg;
+
+/** \class pkg::PartData
+ Base class for holding the data in a NewtonScript Package Part
+ */
+
+/**
+ Index of this Part in the list of Parts in the Package.
+ \return 0-based index
+ */
+int PartData::index() {
+  return part_entry_.index();
+}
+
+
+/** \class pkg::PartDataGeneric
+ Holds the uninterpreted data of a Part with raw data or unknown type.
+ */
 
 /**
  Read the Part of the Package as raw data.
@@ -36,9 +53,10 @@ int PartDataGeneric::writeAsm(std::ofstream &f) {
   return part_entry_.size();
 }
 
-int PartData::index() {
-  return part_entry_.index();
-}
+
+/** \class pkg::Object
+ 
+ */
 
 /**
  Create a new Object by peeking at the next three words in the package data.

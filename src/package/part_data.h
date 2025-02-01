@@ -8,7 +8,7 @@
 #include <vector>
 #include <map>
 
-namespace ns {
+namespace pkg {
 
 class PartEntry;
 class PackageBytes;
@@ -107,6 +107,6 @@ public:
   bool addLabel(std::string label, ObjectSymbol *symbol);
 };
 
-} // namespace ns
+} // namespace pkg
 
 #endif // NEWTFMT_PART_DATA_H

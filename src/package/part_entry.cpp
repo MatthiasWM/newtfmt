@@ -4,7 +4,7 @@
 #include "package_bytes.h"
 #include "part_data.h"
 
-using namespace ns;
+using namespace pkg;
 
 /**
  Hold all the Part attributes, but not the Part Data.

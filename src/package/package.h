@@ -10,7 +10,7 @@
 
 #include "relocation_data.h"
 
-namespace ns {
+namespace pkg {
 
 class PartEntry;
 class PackageBytes;
@@ -45,7 +45,7 @@ public:
 };
 
 
-} // namespace ns
+} // namespace pkg
 
 #endif // NEWTFMT_PACKAGE_H
 

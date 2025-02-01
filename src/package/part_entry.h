@@ -7,7 +7,7 @@
 #include <ios>
 #include <cstdlib>
 
-namespace ns {
+namespace pkg {
 
 class PartData;
 class PackageBytes;
@@ -38,7 +38,7 @@ public:
   int writeAsmPartData(std::ofstream &f);
 };
 
-} // namespace ns
+} // namespace pkg
 
 #endif // NEWTFMT_PART_ENTRY_H
 

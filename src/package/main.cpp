@@ -26,10 +26,11 @@ const std::string gnu_objcopy { "/opt/homebrew/bin/arm-none-eabi-objcopy" };
 
 //std::string input_pkg_name { "/Users/matt/Azureus/unna/games/Mines/Mines.pkg" };
 std::string input_pkg_name { "/Users/matt/Azureus/unna/games/SuperNewtris2.0/SNewtris.pkg" };
-std::string pkg_name;
 
-ns::PackageBytes pkg_bytes;
-ns::Package pkg;
+// TODO: don't use globals
+std::string my_pkg_name;
+pkg::PackageBytes my_pkg_bytes;
+pkg::Package my_pkg;
 
 /**
  Read a Package file and create the internal data representation.
@@ -38,12 +39,12 @@ ns::Package pkg;
  */
 int readPackage(std::string package_file_name)
 {
-  pkg_name = package_file_name;
+  my_pkg_name = package_file_name;
   std::ifstream source_file { package_file_name, std::ios::binary };
   if (source_file) {
-    pkg_bytes.assign(std::istreambuf_iterator<char>{source_file}, {});
-    std::cout << "readPackage: \"" << package_file_name << "\" package read (" << pkg_bytes.size() << " bytes)." << std::endl;
-    return pkg.load(pkg_bytes);
+    my_pkg_bytes.assign(std::istreambuf_iterator<char>{source_file}, {});
+    std::cout << "readPackage: \"" << package_file_name << "\" package read (" << my_pkg_bytes.size() << " bytes)." << std::endl;
+    return my_pkg.load(my_pkg_bytes);
   }
   std::cout << "readPackage: Unable to read file \"" << package_file_name << "\"." << std::endl;
   return -1;
@@ -95,15 +96,15 @@ int writeAsm(std::string assembler_file_name)
            << "\t.endm\n\n";
 
 
-  asm_file << "\t.file\t\"" << pkg_name << "\"" << std::endl;
+  asm_file << "\t.file\t\"" << my_pkg_name << "\"" << std::endl;
   asm_file << "\t.data" << std::endl << std::endl;
 
 
-  int skip = pkg.writeAsm(asm_file);
-  if (skip < pkg_bytes.size()) {
-    std::cout << "WARNING: Package has " << pkg_bytes.size()-skip << " more bytes than defined." << std::endl;
+  int skip = my_pkg.writeAsm(asm_file);
+  if (skip < my_pkg_bytes.size()) {
+    std::cout << "WARNING: Package has " << my_pkg_bytes.size()-skip << " more bytes than defined." << std::endl;
     asm_file << "@ ===== Extra data in file" << std::endl;
-    for (auto it = pkg_bytes.begin()+skip; it != pkg_bytes.end(); ++it) {
+    for (auto it = my_pkg_bytes.begin()+skip; it != my_pkg_bytes.end(); ++it) {
       uint8_t b = *it;
       asm_file << "\t.byte\t0x"
       << std::setw(2) << std::setfill('0') << std::hex << (int)b
@@ -169,13 +170,13 @@ int compareBinaries(std::string new_package_name)
   std::ifstream new_file { new_package_name, std::ios::binary };
   if (new_file) {
     new_pkg.assign(std::istreambuf_iterator<char>{new_file}, {});
-    if (new_pkg == pkg_bytes) {
+    if (new_pkg == my_pkg_bytes) {
 //      std::cout << "compareBinaries: Packages are identical." << std::endl;
       std::cout << "OK." << std::endl;
     } else {
-      int i, n = std::min((int)new_pkg.size(), (int)pkg_bytes.size());
+      int i, n = std::min((int)new_pkg.size(), (int)my_pkg_bytes.size());
       for (i=0; i<n; ++i) {
-        if (new_pkg[i] != pkg_bytes[i]) break;
+        if (new_pkg[i] != my_pkg_bytes[i]) break;
       }
       std::cout << "ERROR: compareBinaries: Packages differ starting at 0x"
       << std::setw(8) << std::setfill('0') << std::hex << i << std::dec

@@ -7,7 +7,7 @@
 #include <ios>
 #include <cstdlib>
 
-namespace ns {
+namespace pkg {
 
 class PackageBytes;
 
@@ -45,7 +45,7 @@ public:
   int writeAsm(std::ofstream &f);
 };
 
-} // namespace ns
+} // namespace pkg
 
 #endif
 
