@@ -27,6 +27,7 @@ namespace nos {
 using Boolean = bool;
 using Integer = long;
 using Index = long;
+using Size = long;
 using Real = double;
 using UniChar = char32_t;
 
@@ -63,6 +64,8 @@ Boolean IsArray(RefArg ref);
 Boolean IsFrame(RefArg ref);
 Boolean IsNumber(Ref ref);
 Boolean IsPathExpr(RefArg ref);
+
+Ref AllocateArray(RefArg theClass, Size length);
 
 void Print(RefArg);
 

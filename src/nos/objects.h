@@ -20,30 +20,72 @@
 #ifndef NEWTFMT_NOS_OBJECTS_H
 #define NEWTFMT_NOS_OBJECTS_H
 
+#include "nos/types.h"
+
+#include "nos/ref.h"
+
+#include <string>
+#include <vector>
+
 namespace nos {
 
-class Object {
-  //  Integer ref_count_;
-  //  uint8_t type_;
-  //  uint8_t flags_;
-public:
-  Object() = default;
-};
+class Ref;
 
 class BinaryObject : public Object {
+  Ref class_;
+  //std::array<uint8_t> data_;
+  //std::vector<uint8_t> data_ { nullptr };
+protected:
+  ~BinaryObject() = default;
+public:
+  constexpr BinaryObject() : Object(Type::Binary) { }
 };
 
-class Symbol : public Object {
+//class RealObject : public Object {
+//  Ref class_; // is 'real
+//  double value_;
+//protected:
+//  ~RealObject() = default;
+//public:
+//  constexpr RealObject() { }
+//};
+
+class SymbolObject : public Object {
+public:
+  uint32_t hash_;
+  const char *symbol_;
+protected:
+public:
+  constexpr SymbolObject(uint32_t hash, const char *sym)
+  : Object(Type::Symbol), hash_(hash), symbol_(sym) { }
+  ~SymbolObject() = default;
+  uint32_t hash() { return hash_; }
+  const char *symbol() { return symbol_; }
 };
 
-class SlottedObject : public Object {
-};
+//class SlottedObject : public Object {
+//protected:
+//  ~SlottedObject() = default;
+//public:
+//  SlottedObject() = default;
+//};
 
-class Array : public SlottedObject {
-};
+//class ArrayObject : public SlottedObject {
+//  Ref class_;
+//  std::vector<Ref> ref_array_;
+//protected:
+//  ~ArrayObject() = default;
+//public:
+//  ArrayObject() = default;
+//};
 
-class Frame : public SlottedObject {
-};
+//class FrameObject : public SlottedObject {
+//  std::map<Ref, Ref> ref_map_;
+//protected:
+//  ~FrameObject() = default;
+//public:
+//  FrameObject() = default;
+//};
 
 } // namespace nos
 

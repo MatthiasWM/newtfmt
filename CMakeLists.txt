@@ -34,8 +34,8 @@ set(NOS_SRCS
   src/nos/types.cpp  
   src/nos/objects.h
   src/nos/objects.cpp
-  src/nos/refs.h
-  src/nos/refs.cpp
+  src/nos/ref.h
+  src/nos/ref.cpp
   src/nos/print.h
   src/nos/print.cpp
 )

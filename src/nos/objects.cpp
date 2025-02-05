@@ -20,3 +20,38 @@
 #include "nos/objects.h"
 
 using namespace nos;
+
+
+void Object::incr_ref_count() {
+  ref_count_++;
+}
+
+void Object::decr_ref_count() {
+  ref_count_--;
+  // TODO: if ref count is 0, we can safely delete this object
+}
+
+
+//constexpr SymbolObject::SymbolObject(const char *) {
+//}
+
+//constexpr SymbolObject gSymArray{ "array" };
+
+
+//constexpr SymbolObject gSymArray{ "array" };
+
+
+
+//using RRef = std::variant<int, const int*>;
+//
+//constexpr int a = 3;
+//constexpr int b = 4;
+//
+//constexpr RRef arr[] = { a, b };
+//constexpr RRef arrptr[] = { &a, b };
+//
+//
+//void xxx() {
+//  (void)arr;
+//  (void)arrptr;
+//}

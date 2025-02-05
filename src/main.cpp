@@ -23,7 +23,7 @@
 #include "package/part_entry.h"
 #include "package/relocation_data.h"
 
-#include "nos/refs.h"
+#include "nos/ref.h"
 #include "nos/objects.h"
 
 #include "tools/tools.h"
@@ -236,10 +236,40 @@ int main_package_test(int argc, const char * argv[])
   return 0;
 }
 
+
+using A = std::variant<int, double, long, void*>;
+using B = void*;
+class C {
+  A a;
+};
+class D {
+  A a;
+public:
+  virtual ~D() { }
+  bool isInt() { return std::holds_alternative<int>(a); }
+};
+
+
+
+constexpr nos::SymbolObject gSymArray { 0x222, "array" };
+constexpr nos::Ref r32 { 32 };
+constexpr nos::Ref rSym { gSymArray };
+
 int main(int argc, const char * argv[])
 {
   (void)argc; (void)argv;
   nos::Ref t = nos::MakeInt(4711);
+  nos::Ref q { 1234 };
   nos::Print(t);
+  nos::Print(q);
+  nos::Print(r32);
+  nos::Print(rSym);
+
+  nos::Ref skandal{ 32168 };
+//  nos::Ref hello{ nos::SymbolObject{ 0x343, "test" } };
+  nos::Ref hello{ *new nos::SymbolObject{ 0x343, "test" } };
+  nos::Print(skandal);
+  nos::Print(hello);
+
   return 0;
 }

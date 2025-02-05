@@ -19,7 +19,7 @@
 #include "nos/print.h"
 
 #include "nos/types.h"
-#include "nos/refs.h"
+#include "nos/ref.h"
 
 using namespace nos;
 

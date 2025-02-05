@@ -77,10 +77,12 @@ I want to make sure that all offsets and sizes are using labels and then
 verify that the packages still load and work correctly.
 
 Not sure if this is needed for relocation Data as well as it is rarely used
-(but if it *is* used, it seems to implement copy protection schemes).
+(but if it *is* used, it seems to implement copy protection schemes). We could
+add an ARM32 disassembler if we want to dive deeper int that. 
 
 ### Next I want to generate a Newton Object Tree from the binary data:
 
+- implement a rough Newton Object System (nos)
 - generate Newton Object tree from package
 - create package from Newton Object tree
 - compare binary data from original package and Object Tree generated package
@@ -171,7 +173,8 @@ reader and writer recognizes those Parts and transfers them verbatim.
 ## History
 
 - Jan '25: initial commit, package to binary, binary to asm, asm to package
-- Feb '25: adding Newton Object System, nos
+- Feb '25: adding Newton Object System, nos, using modern C++ to use constexpr 
+           for generating the default object system at compile time.
 
  — Matthias
 

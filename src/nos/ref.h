@@ -24,20 +24,58 @@
 
 #include "nos/print.h"
 
+#include <variant>
+
 namespace nos {
 
-class Ref {
-  union {
-    Ptr ptr_;
-    Integer integer_;
-  } u;
-  uint8_t type_;
+class Object {
+  friend class Ref;
+  Object(const Object&) = delete;
+  Object(Object&&) = delete;
+  Object &operator=(const Object&) = delete;
+  Object &operator=(Object&&) = delete;
+protected:
+  enum class Type: uint8_t {
+    Symbol,
+    Array,
+    Frame,
+    Binary
+  };
+  int ref_count_{ 0 };
+  Type type_;
+  bool read_only_{ true };
+  ~Object() = default;
+  void incr_ref_count();
+  void decr_ref_count();
 public:
-  Ref();
-  Ref(Integer i);
-  ~Ref();
-  int Print(PrintState &ps) const;
+  constexpr Object(Type type) : type_(type) { }
+};
+
+class Ref {
+  // Special, Magic, Char, String
+  std::variant<Integer, Real, Boolean, const Object*, Object*> ref_;
+  void unref();
+public:
+  constexpr Ref() : ref_(false) { };
+  Ref(const Ref &other);
+  Ref(Ref &&other);
+  Ref &operator=(const Ref &other);
+  Ref &operator=(Ref &&other);
+  ~Ref() = default;
+
+  constexpr Ref(Integer i) : ref_(i) {}
+  void Assign(Integer i);
+  Boolean IsInteger();
+
+  constexpr Ref(const Object &o): ref_(&o) { }
+  void Assign(ObjectPtr o);
+  Boolean IsObject();
+
+  constexpr Ref(Object &o): ref_(&o) { o.read_only_ = false; o.incr_ref_count(); }
+
   void AddArraySlot(RefArg value) const;
+
+  int Print(PrintState &ps) const;
 };
 
 } // namespace nos
