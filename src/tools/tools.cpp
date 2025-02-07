@@ -80,3 +80,31 @@ int write_data(std::ofstream &f, std::vector<uint8_t> &data) {
   }
   return n;
 }
+
+std::string unicode_to_utf8(char32_t code) {
+  if (code <= 0x7F) {
+    return std::string{ (char)code };
+  }
+  if (code <= 0x7FF) {
+    return std::string{
+      (char)(0xC0 | (code >> 6)),
+      (char)(0x80 | (code & 0x3F))
+    };
+  }
+  if (code <= 0xFFFF) {
+    return std::string{
+      (char)(0xE0 | (code >> 12)),
+      (char)(0x80 | ((code >> 6) & 0x3F)),
+      (char)(0x80 | (code & 0x3F))
+    };
+  }
+  if (code <= 0x10FFFF) {
+    return std::string{
+      (char)(0xF0 | (code >> 18)),
+      (char)(0x80 | ((code >> 12) & 0x3F)),
+      (char)(0x80 | ((code >> 6) & 0x3F)),
+      (char)(0x80 | (code & 0x3F))
+    };
+  }
+  return std::string("");
+}

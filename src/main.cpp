@@ -251,25 +251,34 @@ public:
 
 
 
-constexpr nos::SymbolObject gSymArray { 0x222, "array" };
+//constexpr nos::BinaryObject bin { };
+//constexpr nos::Ref rBin { bin };
+//constexpr nos::Ref rKey { (nos::Object*)&bin };
+
+
+//constexpr nos::SymbolObject gSymArray { 0x222, "array" };
 constexpr nos::Ref r32 { 32 };
-constexpr nos::Ref rSym { gSymArray };
+//constexpr nos::Ref rSym { gSymArray };
 
 int main(int argc, const char * argv[])
 {
   (void)argc; (void)argv;
-  nos::Ref t = nos::MakeInt(4711);
-  nos::Ref q { 1234 };
-  nos::Print(t);
-  nos::Print(q);
+//  nos::Ref t = nos::MakeInt(4711);
+//  nos::Ref q { 1234 };
+//  nos::Print(t);
+//  nos::Print(q);
   nos::Print(r32);
-  nos::Print(rSym);
+  nos::Print(U'ü');
+  nos::Print(U'😀');
+//  nos::Print(rSym);
+//  nos::Print(rBin);
+//  nos::Print(nos::Ref(bin));
 
   nos::Ref skandal{ 32168 };
 //  nos::Ref hello{ nos::SymbolObject{ 0x343, "test" } };
-  nos::Ref hello{ *new nos::SymbolObject{ 0x343, "test" } };
+//  nos::Ref hello{ *new nos::SymbolObject{ 0x343, "test" } };
   nos::Print(skandal);
-  nos::Print(hello);
+//  nos::Print(hello);
 
   return 0;
 }

@@ -22,14 +22,14 @@
 using namespace nos;
 
 
-void Object::incr_ref_count() {
-  ref_count_++;
-}
-
-void Object::decr_ref_count() {
-  ref_count_--;
-  // TODO: if ref count is 0, we can safely delete this object
-}
+//void Object::incr_ref_count() {
+//  ref_count_++;
+//}
+//
+//void Object::decr_ref_count() {
+//  ref_count_--;
+//  // TODO: if ref count is 0, we can safely delete this object
+//}
 
 
 //constexpr SymbolObject::SymbolObject(const char *) {

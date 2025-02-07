@@ -28,55 +28,110 @@
 
 namespace nos {
 
-class Object {
-  friend class Ref;
-  Object(const Object&) = delete;
-  Object(Object&&) = delete;
-  Object &operator=(const Object&) = delete;
-  Object &operator=(Object&&) = delete;
-protected:
-  enum class Type: uint8_t {
-    Symbol,
-    Array,
-    Frame,
-    Binary
+constexpr int kRefTagBits = 2;
+constexpr int kRefValueBits = sizeof(uintptr_t) * 8 - kRefTagBits;
+constexpr uintptr_t kRefValueMask = (~(uintptr_t)0) << kRefTagBits;
+constexpr uintptr_t kRefTagMask = ~kRefValueMask;
+constexpr int kRefImmedBits = 2;
+constexpr uintptr_t kRefImmedMask = (~(uintptr_t)0) << kRefImmedBits;
+
+constexpr uint32_t kTagPointer  = 0;
+constexpr uint32_t kTagInteger  = 1;
+constexpr uint32_t kTagImmed    = 2;
+constexpr uint32_t kTagMagicPtr = 3;
+
+constexpr int nBits = 30;
+
+#ifndef __BYTE_ORDER__
+#error byte order not defined
+#endif
+
+class Ref
+{
+public:
+  enum class Tag: uint8_t {
+    pointer, integer, immed, magic
   };
-  int ref_count_{ 0 };
-  Type type_;
-  bool read_only_{ true };
-  ~Object() = default;
-  void incr_ref_count();
-  void decr_ref_count();
+
+  enum class Type: uint8_t {
+    special, unichar, boolean, reserved
+  };
+
+private:
+  typedef struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    Tag tag_:kRefTagBits;
+    uintptr_t value_:kRefValueBits;
+#else
+    uintptr_t value_:kRefValueBits;
+    Tag tag_:kRefTagBits;
+#endif
+  } Value;
+
+  typedef struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    Tag tag_:kRefTagBits;
+    Type type_:kRefImmedBits;
+    uintptr_t value_:kRefValueBits-kRefImmedBits;
+#else
+    uintptr_t value_:kRefValueBits-kRefImmedBits;
+    Type type_:kRefImmedBits;
+    Tag tag_:kRefTagBits;
+#endif
+  } Immed;
+
+  union {
+    uintptr_t t;
+    Value v;
+    Immed i;
+//  Magic table:18, index:12, Tag:2
+    Object *o;
+  };
+
 public:
-  constexpr Object(Type type) : type_(type) { }
-};
 
-class Ref {
-  // Special, Magic, Char, String
-  std::variant<Integer, Real, Boolean, const Object*, Object*> ref_;
-  void unref();
-public:
-  constexpr Ref() : ref_(false) { };
-  Ref(const Ref &other);
-  Ref(Ref &&other);
-  Ref &operator=(const Ref &other);
-  Ref &operator=(Ref &&other);
-  ~Ref() = default;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  constexpr Ref() : i { Tag::immed, Type::special, 0 } { };
+  constexpr Ref(Type type, Integer ival) : i { Tag::immed, type, (unsigned long)ival } { };
+  constexpr Ref(Integer i) : v { Tag::integer, (unsigned long)i } {}
+  constexpr Ref(int i) : v { Tag::integer, (unsigned long)i } {}
+  constexpr Ref(UniChar u) : i { Tag::immed, Type::unichar, u } {}
+#else
+  constexpr Ref() : i { 0, Type::special, Tag::immed } { };
+  constexpr Ref(Type type, Integer ival) : i { (unsigned long)ival, type, Tag::immed } { };
+  constexpr Ref(Integer i) : v { (unsigned long)i, Tag::integer } {}
+  constexpr Ref(int i) : v { (unsigned long)i, Tag::integer } {}
+  constexpr Ref(UniChar u) : i { u, Type::unichar, Tag::immed } {}
+#endif
+  constexpr Ref(const Object &obj): o(const_cast<Object*>(&obj)) { }
+  constexpr Ref(Object *obj): o(obj) { }
 
-  constexpr Ref(Integer i) : ref_(i) {}
-  void Assign(Integer i);
-  Boolean IsInteger();
-
-  constexpr Ref(const Object &o): ref_(&o) { }
-  void Assign(ObjectPtr o);
-  Boolean IsObject();
-
-  constexpr Ref(Object &o): ref_(&o) { o.read_only_ = false; o.incr_ref_count(); }
-
-  void AddArraySlot(RefArg value) const;
+//  constexpr Ref(const Ref &other) { i = other.i; }
+//  Ref(Ref &&other);
+//  Ref &operator=(const Ref &other);
+//  Ref &operator=(Ref &&other);
+//  ~Ref() = default;
+//  void Assign(Integer i);
+//  Boolean IsInteger();
+//
+//  Ref(Object *o): v { ((unsigned long)o)>>kRefTagBits, Tag::pointer } { }
+//  void Assign(ObjectPtr o);
+//  Boolean IsObject();
+//
+//  constexpr Ref(Object &o): ref_(&o) { o.read_only_ = false; o.incr_ref_count(); }
+//
+//  void AddArraySlot(RefArg value) const;
 
   int Print(PrintState &ps) const;
 };
+
+
+constexpr Ref RefNIL;
+constexpr Ref RefTRUE { Ref::Type::boolean, 1 };
+constexpr Ref RefSMILE { U'😀' };
+constexpr Ref RefPYTHON { 42 };
+
+
 
 } // namespace nos
 

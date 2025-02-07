@@ -363,9 +363,21 @@ struct ObjHeader {
 // Public object flag bits
 const int kObjSlotted = 1;        // 0 = binary, 1 = slotted
 const int kObjFrame = 2;        // if slotted, 0 = array, 1 = frame
+// kObjFree      = 0x04,
+// kObjMarked    = 0x08,
 const int kObjLocked = 16;        // 1 = locked (do not move)
+// kObjForward    = 0x20,
 const int kObjReadOnly = 64;      // 1 = writing is an error
 const int kObjDirty = 128;        // 1 = object has been written to
+
+
+// the lowest 2 bits indicate the object type,
+// distinguished primarily by kObjSlotted
+//kBinaryObject  = 0x00,
+//kIndirectBinaryObject = 0x02,
+//kArrayObject  = kObjSlotted + 0x00,
+//kFrameObject  = kObjSlotted + 0x02,
+//kObjMask      = 0x03
 
 // To initialize the object system:
 //    optionally call SetObjectHeapSize(yourFavoriteSize, long allocateInTempMemory = 1);
