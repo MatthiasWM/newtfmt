@@ -261,6 +261,9 @@ constexpr nos::Object f_map { nos::Object::Array(0, 3, f_map_symbols) };
 constexpr nos::Ref f_values[] = { 10, 20 };
 constexpr nos::Object f { nos::Object::Frame(f_map, 2, f_values) };
 
+constexpr nos::Object gObjHello { "Hello world!" };
+constexpr nos::Ref gRefHello { gObjHello };
+
 
 int main(int argc, const char * argv[])
 {
@@ -272,6 +275,7 @@ int main(int argc, const char * argv[])
   nos::Print(r32);        // compile time integer
   nos::Print(U'ü');       // support for lower 8 bit unicode characters
   nos::Print(U'😀');      // support for full sized unicode characters
+  nos::Print(gRefHello);  // static strings
 
   return 0;
 }

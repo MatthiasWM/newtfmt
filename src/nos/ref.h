@@ -130,6 +130,7 @@ public:
   bool IsFrame() const;
 
   Ref GetArraySlot(Index slot) const;
+  Object *GetObject() const { return IsPtr() ? o : nullptr; }
 
   int Print(PrintState &ps) const;
 };
@@ -147,7 +148,6 @@ inline bool IsBinary(Ref r) { return r.IsBinary(); }
 inline bool IsArray(Ref r) { return r.IsArray(); }
 inline bool IsFrame(Ref r) { return r.IsFrame(); }
 inline Ref GetArraySlot(RefArg array, Index slot) { return array.GetArraySlot(slot); }
-
 
 } // namespace nos
 

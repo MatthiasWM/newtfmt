@@ -32,6 +32,50 @@ Ref Object::GetSlot(Index i) const {
   }
 }
 
+int nos::symcmp(const char *s1, const char *s2)
+{
+  for (;;) {
+    unsigned char c1 = static_cast<unsigned char>(*s1++);
+    unsigned char c2 = static_cast<unsigned char>(*s2++);
+    if (c1 == 0) {
+      if (c2 == 0)
+        return 0;
+      else
+        return -1;
+    }
+    if (c2 == 0)
+      return 1;
+    c1 = std::tolower(c1);
+    c2 = std::tolower(c2);
+    if (c1 != c2) {
+      if (c1 > c2)
+        return 1;
+      else
+        return -1;
+    }
+  }
+}
+
+int Object::SymbolCompare(const Object *other) const
+{
+  if (sym.hash_ != other->sym.hash_) {
+    if (sym.hash_ > other->sym.hash_)
+      return 1;
+    else
+      return -1;
+  }
+  return symcmp(sym.string_, other->sym.string_);
+}
+
+int SymbolCompare(Ref sym1, Ref sym2)
+{
+  if (sym1 == sym2)
+    return 0;
+  Object *obj1 = sym1.GetObject();
+  Object *obj2 = sym2.GetObject();
+  return obj1->SymbolCompare(obj2);
+}
+
 int Object::Print(PrintState &ps) const
 {
   switch (t.tag_) {
@@ -40,6 +84,9 @@ int Object::Print(PrintState &ps) const
         if (!ps.symbol_expected())
           fprintf(ps.out_, "'");
         fprintf(ps.out_, "%s", sym.string_);
+        //    } else if 'real, 'samples, 'string, 'instructions, 'code, 'bits, 'mask, 'cbits
+      } else if (SymbolCompare(gSymString.GetObject())) {
+        fprintf(ps.out_, "\"%s\"", bin.data_); // TODO: must escape characters, is \0 always at the end?
       } else {
         fprintf(ps.out_, "binary(");
         ps.expect_symbol(true);

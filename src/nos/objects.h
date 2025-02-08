@@ -127,6 +127,8 @@ public:
   : t { tag, 0x10 }, size_{ static_cast<uint32_t>(num_slots*sizeof(Ref)) }, frame { class_or_map, (Ref*)values, 0 }
   { }
 
+  constexpr Object(const char *string);
+
   constexpr static Object Array(Ref obj_class, uint32_t num_slots, const Ref *values) {
     return Object(Tag::array, obj_class, num_slots, values);
   }
@@ -144,9 +146,24 @@ public:
 
   Ref GetSlot(Index i) const;
 
+  int SymbolCompare(const Object *other) const;
+
   int Print(PrintState &ps) const;
 
 }; // no need for `__attribute__((packed));`, sizeof(Object) is 32 bytes on a 64bit CPU.
+
+int symcmp(const char *a, const char *b);
+int SymbolCompare(Ref sym1, Ref sym2);
+
+constexpr Object gSymObjString { 0x2222, "string" };
+constexpr Ref gSymString { gSymObjString };
+
+
+constexpr Object::Object(const char *string)
+: t { Tag::binary, 0x10 }, size_{ _strlen(string) }, bin { gSymString, const_cast<char*>(string) }
+{ }
+
+
 
 } // namespace nos
 
