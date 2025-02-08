@@ -264,6 +264,9 @@ constexpr nos::Object f { nos::Object::Frame(f_map, 2, f_values) };
 constexpr nos::Object gObjHello { "Hello world!" };
 constexpr nos::Ref gRefHello { gObjHello };
 
+constexpr nos::Object gObjPi { 3.141592654 };
+constexpr nos::Ref gRefPi { gObjPi };
+
 
 int main(int argc, const char * argv[])
 {
@@ -276,6 +279,7 @@ int main(int argc, const char * argv[])
   nos::Print(U'ü');       // support for lower 8 bit unicode characters
   nos::Print(U'😀');      // support for full sized unicode characters
   nos::Print(gRefHello);  // static strings
+  nos::Print(gRefPi);     // floating point values
 
   return 0;
 }

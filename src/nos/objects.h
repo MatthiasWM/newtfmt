@@ -83,13 +83,13 @@ class alignas(long)  Object
   typedef struct {
     Ref    class_;
     Real   value_;
-  } Real;
+  } _Real;
 
   typedef struct {
     Ref    class_;
     char   *string_;
     uint32_t hash_;
-  } Symbol;
+  } _Symbol;
 
   union {
     TagFlags f;
@@ -103,8 +103,8 @@ class alignas(long)  Object
     LargeBinary lbo;
     _Array array;
     _Frame frame;
-    Real real;
-    Symbol sym;
+    _Real real;
+    _Symbol sym;
   };
 //  Object(const Object&) = delete;
 //  Object(Object&&) = delete;
@@ -128,6 +128,8 @@ public:
   { }
 
   constexpr Object(const char *string);
+
+  constexpr Object(Real value);
 
   constexpr static Object Array(Ref obj_class, uint32_t num_slots, const Ref *values) {
     return Object(Tag::array, obj_class, num_slots, values);
@@ -158,9 +160,15 @@ int SymbolCompare(Ref sym1, Ref sym2);
 constexpr Object gSymObjString { 0x2222, "string" };
 constexpr Ref gSymString { gSymObjString };
 
+constexpr Object gSymObjReal { 0x2222, "real" };
+constexpr Ref gSymReal { gSymObjReal };
 
 constexpr Object::Object(const char *string)
 : t { Tag::binary, 0x10 }, size_{ _strlen(string) }, bin { gSymString, const_cast<char*>(string) }
+{ }
+
+constexpr Object::Object(Real value)
+: t { Tag::binary, 0x10 }, size_{ 0 }, real { gSymReal, value }
 { }
 
 
