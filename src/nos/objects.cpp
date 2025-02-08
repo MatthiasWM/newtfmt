@@ -84,7 +84,7 @@ int Object::Print(PrintState &ps) const
         if (!ps.symbol_expected())
           fprintf(ps.out_, "'");
         fprintf(ps.out_, "%s", sym.string_);
-        //    } else if 'real, 'samples, 'string, 'instructions, 'code, 'bits, 'mask, 'cbits
+//    } else if 'samples, 'instructions, 'code, 'bits, 'mask, 'cbits
       } else if (bin.class_.GetObject()->SymbolCompare(&gSymObjString)==0) {
         fprintf(ps.out_, "\"%s\"", bin.data_); // TODO: must escape characters, is \0 always at the end?
       } else if (bin.class_.GetObject()->SymbolCompare(&gSymObjReal)==0) {

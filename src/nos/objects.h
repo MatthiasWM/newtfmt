@@ -111,7 +111,17 @@ class alignas(long)  Object
 //  Object &operator=(const Object&) = delete;
 //  Object &operator=(Object&&) = delete;
   // a little trick to get a constexpr strlen()
-  uint32_t constexpr _strlen(const char* str) { return *str ? 1 + _strlen(str + 1) : 0; }
+  static constexpr uint32_t _strlen(const char* str) {
+    return *str ? 1 + _strlen(str + 1) : 0;
+  }
+  static constexpr uint32_t _hash1(const char* str) {
+    uint8_t c = (uint8_t)str[0];
+    if (c>='a' && c<='z') c -= 32;
+    return *str ? c + _hash1(str+1) : 0;
+  }
+  static constexpr uint32_t _hash(const char* str) {
+    return _hash1(str) * 0x9E3779B9;
+  }
 public:
   Object() : size_(0), gc_(0) { }
 
@@ -131,12 +141,16 @@ public:
 
   constexpr Object(Real value);
 
-  constexpr static Object Array(Ref obj_class, uint32_t num_slots, const Ref *values) {
+  static constexpr Object Array(Ref obj_class, uint32_t num_slots, const Ref *values) {
     return Object(Tag::array, obj_class, num_slots, values);
   }
 
-  constexpr static Object Frame(Ref map, uint32_t num_slots, const Ref *values) {
+  static constexpr Object Frame(Ref map, uint32_t num_slots, const Ref *values) {
     return Object(Tag::frame, map, num_slots, values);
+  }
+
+  static constexpr Object Symbol(const char *symbol) {
+    return Object(_hash(symbol), symbol);
   }
 
   Index size() const { return size_; }
@@ -157,10 +171,10 @@ public:
 int symcmp(const char *a, const char *b);
 int SymbolCompare(Ref sym1, Ref sym2);
 
-constexpr Object gSymObjString { 0x2222, "string" };
+constexpr Object gSymObjString { Object::Symbol("string") };
 constexpr Ref gSymString { gSymObjString };
 
-constexpr Object gSymObjReal { 0x2222, "real" };
+constexpr Object gSymObjReal { Object::Symbol("real") };
 constexpr Ref gSymReal { gSymObjReal };
 
 constexpr Object::Object(const char *string)

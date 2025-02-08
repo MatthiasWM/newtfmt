@@ -243,7 +243,7 @@ int main_package_test(int argc, const char * argv[])
 //  printLength: nil,
 
 // Using Clang on ARM64, these are all indeed compile time constants!
-constexpr nos::Object gSymObjArray { 0x2222, "array" }; // TODO: fix the hash!
+constexpr nos::Object gSymObjArray { nos::Object::Symbol("array") };
 constexpr nos::Ref gSymArray { gSymObjArray };
 constexpr nos::Ref r32 { 32 };
 
@@ -252,9 +252,9 @@ constexpr nos::Ref aa[] = { 3, 4, 5 };
 constexpr nos::Object a { nos::Object::Array(gSymArray, 3, aa) };
 
 // Creating a read-only Frame
-constexpr nos::Object gSymObjTop { 0x2222, "top" }; // TODO: fix the hash!
+constexpr nos::Object gSymObjTop { nos::Object::Symbol("top") };
 constexpr nos::Ref gSymTop { gSymObjTop };
-constexpr nos::Object gSymObjLeft { 0x2222, "left" }; // TODO: fix the hash!
+constexpr nos::Object gSymObjLeft { nos::Object::Symbol("left") };
 constexpr nos::Ref gSymLeft { gSymObjLeft };
 constexpr nos::Ref f_map_symbols[] = { nos::RefNIL, gSymTop, gSymLeft };
 constexpr nos::Object f_map { nos::Object::Array(0, 3, f_map_symbols) };
