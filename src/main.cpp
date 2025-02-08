@@ -237,21 +237,32 @@ int main_package_test(int argc, const char * argv[])
 }
 
 // Using Clang on ARM64, these are all indeed compile time constants!
-constexpr nos::Object gSymObjArray { 0x2222, "array" };
+constexpr nos::Object gSymObjArray { 0x2222, "array" }; // TODO: fix the hash!
 constexpr nos::Ref gSymArray { gSymObjArray };
-constexpr nos::Object gTest { 0 };
 constexpr nos::Ref r32 { 32 };
+
+// Creating a read-only Array
 constexpr nos::Ref aa[] = { 3, 4, 5 };
 constexpr nos::Object a { nos::Object::Array(gSymArray, 3, aa) };
+
+// Creating a read-only Frame
+constexpr nos::Object gSymObjTop { 0x2222, "top" }; // TODO: fix the hash!
+constexpr nos::Ref gSymTop { gSymObjTop };
+constexpr nos::Object gSymObjLeft { 0x2222, "left" }; // TODO: fix the hash!
+constexpr nos::Ref gSymLeft { gSymObjLeft };
+constexpr nos::Ref f_map_symbols[] = { nos::RefNIL, gSymTop, gSymLeft };
+constexpr nos::Object f_map { nos::Object::Array(0, 3, f_map_symbols) };
+constexpr nos::Ref f_values[] = { 10, 20 };
+constexpr nos::Object f { nos::Object::Frame(f_map, 2, f_values) };
+
 
 int main(int argc, const char * argv[])
 {
   (void)argc; (void)argv;
 
   nos::Print(gSymArray);  // compile time symbol
-  nos::Print(gTest);      // future compile time arrays and frames
   nos::Print(a);          // test arrays
-  printf("size of object: %ld bytes\n", sizeof(nos::Object));
+  nos::Print(f);          // test arrays
   nos::Print(r32);        // compile time integer
   nos::Print(U'ü');       // support for lower 8 bit unicode characters
   nos::Print(U'😀');      // support for full sized unicode characters

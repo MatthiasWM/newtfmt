@@ -21,35 +21,58 @@
 
 using namespace nos;
 
+Ref Object::GetSlot(Index i) const {
+  if (f.slotted_) {
+    if (i<(Index)(size()/sizeof(Ref)))
+      return frame.slot_[i];
+    else
+      return RefNIL;
+  } else {
+    return RefNIL;
+  }
+}
+
 int Object::Print(PrintState &ps) const
 {
-  fprintf(ps.out_, "Object <0x%016lx> {\n", (uintptr_t)this);
-//  fprintf(ps.out_, "  flags dirty:%d read_only:%d forward:%d locked:%d marked:%d free:%d frame:%d slotted:%d\n",
-//          f.dirty_, f.read_only_, f.forward_, f.locked_, f.marked_, f.free_, f.frame_, f.slotted_);
-//  fprintf(ps.out_, "  tag flags:%02x tag:%d\n", t.flags_, (int)t.tag_);
-  fprintf(ps.out_, "  raw flags:%02x\n", all_flags_);
-  fprintf(ps.out_, "  size %d\n", size());
+//  fprintf(ps.out_, "Object <0x%016lx> {\n", (uintptr_t)this);
+//  //  fprintf(ps.out_, "  flags dirty:%d read_only:%d forward:%d locked:%d marked:%d free:%d frame:%d slotted:%d\n",
+//  //          f.dirty_, f.read_only_, f.forward_, f.locked_, f.marked_, f.free_, f.frame_, f.slotted_);
+//  //  fprintf(ps.out_, "  tag flags:%02x tag:%d\n", t.flags_, (int)t.tag_);
+//  fprintf(ps.out_, "  raw flags:%02x\n", all_flags_);
+//  fprintf(ps.out_, "  size %ld\n", size());
 
   switch (t.tag_) {
     case Tag::binary:
-      fprintf(ps.out_, "  binary\n");
+      if (bin.class_ == RefSymbolClass) {
+        fprintf(ps.out_, "'%s\n", sym.string_);
+      } else {
+        fprintf(ps.out_, "  binary\n");
+      }
       break;
     case Tag::large_binary:
       fprintf(ps.out_, "  large_binary\n");
       break;
     case Tag::array: {
-      fprintf(ps.out_, "  array\n");
-      int i, n = size()/sizeof(Ref);
+      fprintf(ps.out_, "array [\n");
+      array.class_.Print(ps);
+      int i, n = (int)(size()/sizeof(Ref));
       for (i=0; i<n; ++i) {
         array.slot_[i].Print(ps);
       }
+      fprintf(ps.out_, "]\n");
     } break;
-    case Tag::frame:
-      fprintf(ps.out_, "  frame\n");
-      break;
+    case Tag::frame: {
+      fprintf(ps.out_, "frame {\n");
+      int i, n = (int)(size()/sizeof(Ref));
+      for (i=0; i<n; ++i) {
+        frame.map_.GetArraySlot(i+1).Print(ps);
+        GetSlot(i).Print(ps);
+      }
+      fprintf(ps.out_, "}\n");
+    } break;
   }
 
-  fprintf(ps.out_, "}\n");
+//  fprintf(ps.out_, "}\n");
 
   return 0;
 }

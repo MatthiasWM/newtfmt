@@ -121,14 +121,20 @@ public:
 //  constexpr Ref(Object &o): ref_(&o) { o.read_only_ = false; o.incr_ref_count(); }
 //
 //  void AddArraySlot(RefArg value) const;
+  constexpr bool operator==(const Ref &other) const { return t == other.t; }
 
   constexpr bool IsPtr() const { return (v.tag_ == Tag::pointer); }
 
+  bool IsBinary() const;
   bool IsArray() const;
+  bool IsFrame() const;
+
+  Ref GetArraySlot(Index slot) const;
 
   int Print(PrintState &ps) const;
 };
 
+using RefArg = const Ref&;
 
 constexpr Ref RefNIL;
 constexpr Ref RefTRUE { Ref::Type::boolean, 1 };
@@ -137,7 +143,11 @@ constexpr Ref RefPYTHON { 42 };
 constexpr Ref RefSymbolClass { Ref::Type::special, 0x5555 };
 
 constexpr bool IsPtr(Ref r) { return r.IsPtr(); }
+inline bool IsBinary(Ref r) { return r.IsBinary(); }
 inline bool IsArray(Ref r) { return r.IsArray(); }
+inline bool IsFrame(Ref r) { return r.IsFrame(); }
+inline Ref GetArraySlot(RefArg array, Index slot) { return array.GetArraySlot(slot); }
+
 
 } // namespace nos
 

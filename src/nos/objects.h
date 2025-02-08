@@ -78,7 +78,7 @@ class alignas(long)  Object
     Ref    map_;
     Ref    *slot_;
     uint32_t reserve_;
-  } Frame;
+  } _Frame;
 
   typedef struct {
     Ref    class_;
@@ -102,7 +102,7 @@ class alignas(long)  Object
     Binary bin;
     LargeBinary lbo;
     _Array array;
-    Frame frame;
+    _Frame frame;
     Real real;
     Symbol sym;
   };
@@ -131,10 +131,18 @@ public:
     return Object(Tag::array, obj_class, num_slots, values);
   }
 
-  uint32_t size() const { return size_; }
+  constexpr static Object Frame(Ref map, uint32_t num_slots, const Ref *values) {
+    return Object(Tag::frame, map, num_slots, values);
+  }
+
+  Index size() const { return size_; }
   uint32_t gc() const { return gc_; }
 
+  constexpr bool IsBinary() const { return (t.tag_ == Tag::binary); }
   constexpr bool IsArray() const { return (t.tag_ == Tag::array); }
+  constexpr bool IsFrame() const { return (t.tag_ == Tag::frame); }
+
+  Ref GetSlot(Index i) const;
 
   int Print(PrintState &ps) const;
 

@@ -28,8 +28,21 @@ using namespace nos;
 
 static_assert(sizeof(Ref)==sizeof(uintptr_t), "'Ref' has unexpected size.");
 
+bool Ref::IsBinary() const {
+  return IsPtr() && o->IsBinary();
+}
+
 bool Ref::IsArray() const {
   return IsPtr() && o->IsArray();
+}
+
+bool Ref::IsFrame() const {
+  return IsPtr() && o->IsFrame();
+}
+
+// TODO: this should probably throw an exception?
+Ref Ref::GetArraySlot(Index slot) const {
+  return IsArray() ? o->GetSlot(slot) : RefNIL;
 }
 
 int Ref::Print(PrintState &ps) const {
@@ -43,7 +56,7 @@ int Ref::Print(PrintState &ps) const {
     case Tag::immed:
       switch (i.type_) {
         case Type::unichar:
-          fprintf(ps.out_, "'%s\n", unicode_to_utf8((UniChar)i.value_).c_str());
+          fprintf(ps.out_, "$%s\n", unicode_to_utf8((UniChar)i.value_).c_str());
           break;
         case Type::special:
           if (i.value_==0) {
