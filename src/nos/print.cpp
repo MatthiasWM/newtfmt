@@ -32,6 +32,28 @@ PrintState::~PrintState()
 {
 }
 
+void PrintState::tab() {
+  for (uint32_t i=0; i<current_depth_; ++i)
+    fprintf(out_, "  ");
+}
+
+bool PrintState::more_depth() {
+  return (current_depth_ < print_depth_);
+}
+
+bool PrintState::incr_depth() {
+  if (current_depth_ < print_depth_) {
+    current_depth_++;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void PrintState::decr_depth() {
+  if (current_depth_ > 0)
+    current_depth_--;
+}
 
 /**
  Print any Ref.

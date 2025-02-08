@@ -23,16 +23,27 @@
 #include "nos/types.h"
 
 #include <stdio.h>
+#include <stdint.h>
+//#include <limits>
 
 namespace nos {
 
 class PrintState {
 public:
-//  uint32_t indent_{ 0 };
+//  prettyPrint: true,
+//  printDepth: 3,
+//  printLength: nil,
+//  uint32_t print_length_{ std::numeric_limits<uint32_t>::max() };
+  uint32_t print_depth_{ 3 };
+  uint32_t current_depth_{ 0 };
   FILE *out_{ nullptr };
 public:
   PrintState(FILE *fout);
   ~PrintState();
+  void tab();
+  bool more_depth(); // TODO: bad naming
+  bool incr_depth(); // TODO: return value not used
+  void decr_depth();
 };
 
 } // namespace nos

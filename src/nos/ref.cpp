@@ -48,36 +48,49 @@ Ref Ref::GetArraySlot(Index slot) const {
 int Ref::Print(PrintState &ps) const {
   switch (v.tag_) {
     case Tag::pointer:
-      o->Print(ps);
+      if (ps.more_depth()) {
+        o->Print(ps);
+      } else {
+        ps.tab();
+        fprintf(ps.out_, "<0x%016lx>\n", (uintptr_t)o);
+      }
       break;
     case Tag::integer:
+      ps.tab();
       fprintf(ps.out_, "%ld\n", (Integer)v.value_);
       break;
     case Tag::immed:
       switch (i.type_) {
         case Type::unichar:
+          ps.tab();
           fprintf(ps.out_, "$%s\n", unicode_to_utf8((UniChar)i.value_).c_str());
           break;
         case Type::special:
           if (i.value_==0) {
+            ps.tab();
             fprintf(ps.out_, "NIL\n");
           } else {
+            ps.tab();
             fprintf(ps.out_, "[undefined special: %ld]\n", i.value_);
           }
           break;
         case Type::boolean:
           if (i.value_==1) {
+            ps.tab();
             fprintf(ps.out_, "TRUE\n");
           } else {
+            ps.tab();
             fprintf(ps.out_, "[undefined boolean: %ld]\n", i.value_);
           }
           break;
         case Type::reserved:
-          fprintf(ps.out_, "[reserevd]\n");
+          ps.tab();
+          fprintf(ps.out_, "[reserved]\n");
           break;
       }
       break;
     case Tag::magic:
+      ps.tab();
       fprintf(ps.out_, "[magic]\n");
       break;
   }

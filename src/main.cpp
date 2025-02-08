@@ -236,6 +236,12 @@ int main_package_test(int argc, const char * argv[])
   return 0;
 }
 
+
+// Some Globals:
+//  prettyPrint: true,
+//  printDepth: 3,
+//  printLength: nil,
+
 // Using Clang on ARM64, these are all indeed compile time constants!
 constexpr nos::Object gSymObjArray { 0x2222, "array" }; // TODO: fix the hash!
 constexpr nos::Ref gSymArray { gSymObjArray };

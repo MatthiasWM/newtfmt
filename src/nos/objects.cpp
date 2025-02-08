@@ -44,30 +44,41 @@ int Object::Print(PrintState &ps) const
   switch (t.tag_) {
     case Tag::binary:
       if (bin.class_ == RefSymbolClass) {
+        ps.tab();
         fprintf(ps.out_, "'%s\n", sym.string_);
       } else {
-        fprintf(ps.out_, "  binary\n");
+        ps.tab();
+        fprintf(ps.out_, "binary(%ld)\n", size());
       }
       break;
     case Tag::large_binary:
-      fprintf(ps.out_, "  large_binary\n");
+      ps.tab();
+      fprintf(ps.out_, "large_binary(%ld)\n", size());
       break;
     case Tag::array: {
+      ps.tab();
       fprintf(ps.out_, "array [\n");
+      ps.incr_depth();
       array.class_.Print(ps);
       int i, n = (int)(size()/sizeof(Ref));
       for (i=0; i<n; ++i) {
         array.slot_[i].Print(ps);
       }
+      ps.decr_depth();
+      ps.tab();
       fprintf(ps.out_, "]\n");
     } break;
     case Tag::frame: {
+      ps.tab();
       fprintf(ps.out_, "frame {\n");
+      ps.incr_depth();
       int i, n = (int)(size()/sizeof(Ref));
       for (i=0; i<n; ++i) {
         frame.map_.GetArraySlot(i+1).Print(ps);
         GetSlot(i).Print(ps);
       }
+      ps.decr_depth();
+      ps.tab();
       fprintf(ps.out_, "}\n");
     } break;
   }
