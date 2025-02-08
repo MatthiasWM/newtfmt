@@ -241,7 +241,8 @@ constexpr nos::Object gSymObjArray { 0x2222, "array" };
 constexpr nos::Ref gSymArray { gSymObjArray };
 constexpr nos::Object gTest { 0 };
 constexpr nos::Ref r32 { 32 };
-
+constexpr nos::Ref aa[] = { 3, 4, 5 };
+constexpr nos::Object a { nos::Object::Array(gSymArray, 3, aa) };
 
 int main(int argc, const char * argv[])
 {
@@ -249,6 +250,7 @@ int main(int argc, const char * argv[])
 
   nos::Print(gSymArray);  // compile time symbol
   nos::Print(gTest);      // future compile time arrays and frames
+  nos::Print(a);          // test arrays
   printf("size of object: %ld bytes\n", sizeof(nos::Object));
   nos::Print(r32);        // compile time integer
   nos::Print(U'ü');       // support for lower 8 bit unicode characters

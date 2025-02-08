@@ -122,6 +122,10 @@ public:
 //
 //  void AddArraySlot(RefArg value) const;
 
+  constexpr bool IsPtr() const { return (v.tag_ == Tag::pointer); }
+
+  bool IsArray() const;
+
   int Print(PrintState &ps) const;
 };
 
@@ -132,7 +136,8 @@ constexpr Ref RefSMILE { U'😀' };
 constexpr Ref RefPYTHON { 42 };
 constexpr Ref RefSymbolClass { Ref::Type::special, 0x5555 };
 
-
+constexpr bool IsPtr(Ref r) { return r.IsPtr(); }
+inline bool IsArray(Ref r) { return r.IsArray(); }
 
 } // namespace nos
 

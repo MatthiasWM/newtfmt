@@ -29,8 +29,6 @@
 
 namespace nos {
 
-class Ref;
-
 class alignas(long)  Object
 {
   friend class Ref;
@@ -74,7 +72,7 @@ class alignas(long)  Object
     Ref    class_;
     Ref    *slot_;
     uint32_t reserve_;
-  } Array;
+  } _Array;
 
   typedef struct {
     Ref    map_;
@@ -103,7 +101,7 @@ class alignas(long)  Object
   union {
     Binary bin;
     LargeBinary lbo;
-    Array array;
+    _Array array;
     Frame frame;
     Real real;
     Symbol sym;
@@ -125,8 +123,18 @@ public:
   : t { Tag::frame, 0x10 }, size_{ 0 }, frame { 0, 0, 0 }
   { }
 
+  constexpr Object(Tag tag, Ref class_or_map, uint32_t num_slots, const Ref *values)
+  : t { tag, 0x10 }, size_{ static_cast<uint32_t>(num_slots*sizeof(Ref)) }, frame { class_or_map, (Ref*)values, 0 }
+  { }
+
+  constexpr static Object Array(Ref obj_class, uint32_t num_slots, const Ref *values) {
+    return Object(Tag::array, obj_class, num_slots, values);
+  }
+
   uint32_t size() const { return size_; }
   uint32_t gc() const { return gc_; }
+
+  constexpr bool IsArray() const { return (t.tag_ == Tag::array); }
 
   int Print(PrintState &ps) const;
 

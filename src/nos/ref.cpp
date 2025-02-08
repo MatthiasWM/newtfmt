@@ -28,88 +28,11 @@ using namespace nos;
 
 static_assert(sizeof(Ref)==sizeof(uintptr_t), "'Ref' has unexpected size.");
 
-
-#if 0
-/**
- Default constructor.
- */
-//Ref::Ref() {
-//  ref_ = false;
-//}
-
-/**
- Copy constructor.
- */
-Ref::Ref(const Ref &other) {
-  ref_ = other.ref_;
-  if (auto o = std::get_if<Object*>(&ref_))
-    (*o)->incr_ref_count();
+bool Ref::IsArray() const {
+  return IsPtr() && o->IsArray();
 }
-
-/**
- Move constructor.
- */
-Ref::Ref(Ref &&other) {
-  ref_ = other.ref_;
-  other.ref_ = false;
-}
-
-/**
- Assignment operator.
- */
-Ref &Ref::operator=(const Ref &other) {
-  ref_ = other.ref_;
-  if (auto o = std::get_if<Object*>(&ref_))
-    (*o)->incr_ref_count();
-  return *this;
-}
-
-/**
- Move assignment operator.
- */
-Ref &Ref::operator=(Ref &&other) {
-  ref_ = other.ref_;
-  other.ref_ = false;
-  return *this;
-}
-
-void Ref::Assign(Integer i) {
-  unref();
-  ref_ = i;
-}
-
-Boolean Ref::IsInteger() {
-  return std::holds_alternative<Integer>(ref_);
-}
-
-/**
- Clear Ref for a new value, decrementing ref counts if pointing to an objects.
- */
-void Ref::unref() {
-  if (auto o = std::get_if<Object*>(&ref_))
-    (*o)->decr_ref_count();
-  ref_ = false;
-}
-
-//template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-//template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
-//  std::visit(overloaded{
-//    [](auto arg) { std::cout << arg << ' '; },
-//    [ps](Integer arg) { fprintf(ps.out_, "int: %ld\n", arg); }
-//  }, ref_);
-
-
-Ref nos::MakeInt(Integer i) {
-  return Ref(i);
-}
-
-#endif
 
 int Ref::Print(PrintState &ps) const {
-  // switch (ref_.index()) { ...
-  // v1.emplace<std::string>("def");
-  // var.valueless_by_exception()  and index std::variant_npos
-  // std::variant<std::monostate, S> (default constructor, unreferenced)
   switch (v.tag_) {
     case Tag::pointer:
       o->Print(ps);
@@ -146,18 +69,5 @@ int Ref::Print(PrintState &ps) const {
       break;
   }
 
-//
-//  if (auto v = std::get_if<Integer>(&ref_)) {
-//    fprintf(ps.out_, "%ld\n", *v);
-//    // } else if (std::holds_alternative<Real>(ref_) {...
-//  } else if (auto v = std::get_if<const Object*>(&ref_)) {
-//    const Object *obj = *v;
-//    fprintf(ps.out_, "const Object* 0x%016lx [%d,%d]: ", (uintptr_t)*v, obj->ref_count_, obj->read_only_);
-//  } else if (auto v = std::get_if<Object*>(&ref_)) {
-//    Object *obj = *v;
-//    fprintf(ps.out_, "Object* 0x%016lx [%d,%d]: ", (uintptr_t)*v, obj->ref_count_, obj->read_only_);
-//  } else {
-//    fprintf(ps.out_, "<unknown>\n");
-//  }
   return 0;
 }
