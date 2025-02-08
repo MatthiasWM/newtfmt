@@ -130,6 +130,7 @@ constexpr Ref RefNIL;
 constexpr Ref RefTRUE { Ref::Type::boolean, 1 };
 constexpr Ref RefSMILE { U'😀' };
 constexpr Ref RefPYTHON { 42 };
+constexpr Ref RefSymbolClass { Ref::Type::special, 0x5555 };
 
 
 

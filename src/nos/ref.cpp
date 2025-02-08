@@ -112,7 +112,7 @@ int Ref::Print(PrintState &ps) const {
   // std::variant<std::monostate, S> (default constructor, unreferenced)
   switch (v.tag_) {
     case Tag::pointer:
-      fprintf(ps.out_, "<0x%016lx>\n", v.value_ << 2);
+      o->Print(ps);
       break;
     case Tag::integer:
       fprintf(ps.out_, "%ld\n", (Integer)v.value_);

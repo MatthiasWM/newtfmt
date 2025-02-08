@@ -21,37 +21,16 @@
 
 using namespace nos;
 
+int Object::Print(PrintState &ps) const
+{
+  fprintf(ps.out_, "<0x%016lx>\n", (uintptr_t)this);
+  fprintf(ps.out_, "Object {\n");
+  fprintf(ps.out_, "  flags dirty:%d read_only:%d forward:%d locked:%d marked:%d free:%d frame:%d slotted:%d\n",
+          f.dirty_, f.read_only_, f.forward_, f.locked_, f.marked_, f.free_, f.frame_, f.slotted_);
+  fprintf(ps.out_, "  tag flags:%02x tag:%d\n", t.flags_, (int)t.tag_);
+  fprintf(ps.out_, "  raw flags:%02x\n", all_flags_);
+  fprintf(ps.out_, "  size %d\n", size());
+  fprintf(ps.out_, "}\n");
 
-//void Object::incr_ref_count() {
-//  ref_count_++;
-//}
-//
-//void Object::decr_ref_count() {
-//  ref_count_--;
-//  // TODO: if ref count is 0, we can safely delete this object
-//}
-
-
-//constexpr SymbolObject::SymbolObject(const char *) {
-//}
-
-//constexpr SymbolObject gSymArray{ "array" };
-
-
-//constexpr SymbolObject gSymArray{ "array" };
-
-
-
-//using RRef = std::variant<int, const int*>;
-//
-//constexpr int a = 3;
-//constexpr int b = 4;
-//
-//constexpr RRef arr[] = { a, b };
-//constexpr RRef arrptr[] = { &a, b };
-//
-//
-//void xxx() {
-//  (void)arr;
-//  (void)arrptr;
-//}
+  return 0;
+}
