@@ -62,5 +62,6 @@ void nos::Print(RefArg p)
 {
   PrintState state(stdout);
   p.Print(state);
+  fprintf(state.out_, "\n");
 }
 

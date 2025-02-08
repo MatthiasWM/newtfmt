@@ -37,6 +37,7 @@ public:
   uint32_t print_depth_{ 3 };
   uint32_t current_depth_{ 0 };
   FILE *out_{ nullptr };
+  bool sym_next_{ false };
 public:
   PrintState(FILE *fout);
   ~PrintState();
@@ -44,6 +45,8 @@ public:
   bool more_depth(); // TODO: bad naming
   bool incr_depth(); // TODO: return value not used
   void decr_depth();
+  void expect_symbol(bool s) { sym_next_ = s; }
+  bool symbol_expected() { return sym_next_; }
 };
 
 } // namespace nos

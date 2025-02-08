@@ -45,53 +45,45 @@ Ref Ref::GetArraySlot(Index slot) const {
   return IsArray() ? o->GetSlot(slot) : RefNIL;
 }
 
-int Ref::Print(PrintState &ps) const {
+int Ref::Print(PrintState &ps) const
+{
   switch (v.tag_) {
     case Tag::pointer:
       if (ps.more_depth()) {
         o->Print(ps);
       } else {
-        ps.tab();
-        fprintf(ps.out_, "<0x%016lx>\n", (uintptr_t)o);
+        fprintf(ps.out_, "<0x%016lx>", (uintptr_t)o);
       }
       break;
     case Tag::integer:
-      ps.tab();
-      fprintf(ps.out_, "%ld\n", (Integer)v.value_);
+      fprintf(ps.out_, "%ld", (Integer)v.value_);
       break;
     case Tag::immed:
       switch (i.type_) {
         case Type::unichar:
-          ps.tab();
-          fprintf(ps.out_, "$%s\n", unicode_to_utf8((UniChar)i.value_).c_str());
+          fprintf(ps.out_, "$%s", unicode_to_utf8((UniChar)i.value_).c_str());
           break;
         case Type::special:
           if (i.value_==0) {
-            ps.tab();
-            fprintf(ps.out_, "NIL\n");
+            fprintf(ps.out_, "NIL");
           } else {
-            ps.tab();
-            fprintf(ps.out_, "[undefined special: %ld]\n", i.value_);
+            fprintf(ps.out_, "[undefined special: %ld]", i.value_);
           }
           break;
         case Type::boolean:
           if (i.value_==1) {
-            ps.tab();
-            fprintf(ps.out_, "TRUE\n");
+            fprintf(ps.out_, "TRUE");
           } else {
-            ps.tab();
-            fprintf(ps.out_, "[undefined boolean: %ld]\n", i.value_);
+            fprintf(ps.out_, "[undefined boolean: %ld]", i.value_);
           }
           break;
         case Type::reserved:
-          ps.tab();
-          fprintf(ps.out_, "[reserved]\n");
+          fprintf(ps.out_, "[reserved]");
           break;
       }
       break;
     case Tag::magic:
-      ps.tab();
-      fprintf(ps.out_, "[magic]\n");
+      fprintf(ps.out_, "[magic]");
       break;
   }
 

@@ -34,56 +34,64 @@ Ref Object::GetSlot(Index i) const {
 
 int Object::Print(PrintState &ps) const
 {
-//  fprintf(ps.out_, "Object <0x%016lx> {\n", (uintptr_t)this);
-//  //  fprintf(ps.out_, "  flags dirty:%d read_only:%d forward:%d locked:%d marked:%d free:%d frame:%d slotted:%d\n",
-//  //          f.dirty_, f.read_only_, f.forward_, f.locked_, f.marked_, f.free_, f.frame_, f.slotted_);
-//  //  fprintf(ps.out_, "  tag flags:%02x tag:%d\n", t.flags_, (int)t.tag_);
-//  fprintf(ps.out_, "  raw flags:%02x\n", all_flags_);
-//  fprintf(ps.out_, "  size %ld\n", size());
-
   switch (t.tag_) {
     case Tag::binary:
       if (bin.class_ == RefSymbolClass) {
-        ps.tab();
-        fprintf(ps.out_, "'%s\n", sym.string_);
+        if (!ps.symbol_expected())
+          fprintf(ps.out_, "'");
+        fprintf(ps.out_, "%s", sym.string_);
       } else {
-        ps.tab();
-        fprintf(ps.out_, "binary(%ld)\n", size());
+        fprintf(ps.out_, "binary(");
+        ps.expect_symbol(true);
+        bin.class_.Print(ps);
+        ps.expect_symbol(false);
+        fprintf(ps.out_, ": <%ld bytes>)", size());
       }
       break;
     case Tag::large_binary:
-      ps.tab();
-      fprintf(ps.out_, "large_binary(%ld)\n", size());
+      fprintf(ps.out_, "large_binary('");
+      ps.expect_symbol(true);
+      bin.class_.Print(ps);
+      ps.expect_symbol(false);
+      fprintf(ps.out_, ": <%ld bytes>)", size());
       break;
     case Tag::array: {
-      ps.tab();
-      fprintf(ps.out_, "array [\n");
+      fprintf(ps.out_, "[\n");
       ps.incr_depth();
+      ps.tab();
+      ps.expect_symbol(true);
       array.class_.Print(ps);
+      ps.expect_symbol(false);
+      fprintf(ps.out_, ":\n");
       int i, n = (int)(size()/sizeof(Ref));
       for (i=0; i<n; ++i) {
+        ps.tab();
         array.slot_[i].Print(ps);
+        if (i<n) fprintf(ps.out_, ",");
+        fprintf(ps.out_, "\n");
       }
       ps.decr_depth();
       ps.tab();
-      fprintf(ps.out_, "]\n");
+      fprintf(ps.out_, "]");
     } break;
     case Tag::frame: {
-      ps.tab();
-      fprintf(ps.out_, "frame {\n");
+      fprintf(ps.out_, "{\n");
       ps.incr_depth();
       int i, n = (int)(size()/sizeof(Ref));
       for (i=0; i<n; ++i) {
+        ps.tab();
+        ps.expect_symbol(true);
         frame.map_.GetArraySlot(i+1).Print(ps);
+        ps.expect_symbol(false);
+        fprintf(ps.out_, ": ");
         GetSlot(i).Print(ps);
+        if (i<n) fprintf(ps.out_, ",");
+        fprintf(ps.out_, "\n");
       }
       ps.decr_depth();
       ps.tab();
-      fprintf(ps.out_, "}\n");
+      fprintf(ps.out_, "}");
     } break;
   }
-
-//  fprintf(ps.out_, "}\n");
-
   return 0;
 }
