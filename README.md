@@ -44,7 +44,7 @@ I found exactly one package that uses a (tm) Mac Roman character in a symbol:
 Some Objects in patches have the Dirty flag set. This seems to be specific 
 for system patches.
 
-### Schluberger Watson
+### Schlumberger Watson
 
 Schlumberger Packages have an additional Part of type Raw containing the 
 signature "xxxxSLB0Schlumberger Industries\0" and set the 

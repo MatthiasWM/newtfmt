@@ -94,6 +94,8 @@ int main(int argc, const char * argv[])
     input_pkg_name = argv[1];
   }
 
+  std::cout << "Testing package \"" << input_pkg_name << "\"." << std::endl;
+
   pkg::Package my_pkg;
 
   if (my_pkg.load(input_pkg_name) < 0) {
@@ -112,8 +114,12 @@ int main(int argc, const char * argv[])
     std::cout << "ERROR extracting binary data from object file." << std::endl;
     return 0;
   }
-  if (my_pkg.compare("/Users/matt/dev/newtfmt.git/mines.pkg") < 0) {
-    std::cout << "ERROR comparing the original package and the new package." << std::endl;
+  if (my_pkg.compareContents("/Users/matt/dev/newtfmt.git/mines.pkg") < 0) {
+    std::cout << "ERROR comparing the original package and the new package contents." << std::endl;
+    return 0;
+  }
+  if (my_pkg.compareFile("/Users/matt/dev/newtfmt.git/mines.pkg") < 0) {
+    std::cout << "ERROR comparing the binaries of the original package and the new package." << std::endl;
     return 0;
   }
   return 0;

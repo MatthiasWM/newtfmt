@@ -208,6 +208,66 @@ int Package::writeAsm(std::ofstream &f) {
 }
 
 /**
+ Compare the package with the other package.
+ \param[in] other the other package
+ \return 0 if they are the same.
+ */
+int Package::compare(Package &other) {
+  int ret = 0;
+  if (signature_ != other.signature_) {
+    std::cout << "WARNING: Package signatures differ!" << std::endl;
+    ret = -1;
+  }
+  if (type_ != other.type_) {
+    std::cout << "WARNING: Package type texts differ!" << std::endl;
+    ret = -1;
+  }
+  if (flags_ != other.flags_) {
+    std::cout << "WARNING: Package flags differ!" << std::endl;
+    ret = -1;
+  }
+  if (version_ != other.version_) {
+    std::cout << "WARNING: Package versions differ!" << std::endl;
+    ret = -1;
+  }
+  if (copyright_ != other.copyright_) {
+    std::cout << "WARNING: Package copyright messages differ!" << std::endl;
+    ret = -1;
+  }
+  if (name_ != other.name_) {
+    std::cout << "WARNING: Package names differ!" << std::endl;
+    ret = -1;
+  }
+  if (size_ != other.size_) {
+    std::cout << "WARNING: Package sizes differ!" << std::endl;
+    ret = -1;
+  }
+  if (date_ != other.date_) {
+    std::cout << "WARNING: Package creation dates differ!" << std::endl;
+    ret = -1;
+  }
+  if (num_parts_ != other.num_parts_) {
+    std::cout << "WARNING: Number of parts in package differ!" << std::endl;
+    return -1;
+  }
+  for (size_t i=0; i<part_.size(); ++i) {
+    ret = part_[i]->compare(*other.part_[i]);
+    if (ret != 0) break;
+  }
+// TODO: uint32_t reserved2_ {0};
+//  uint32_t reserved3_ {0};
+//  uint32_t directory_size_ {0};
+//  uint32_t vdata_start_ {0};
+//  //  uint32_t info_start_ {0};
+//  uint32_t info_length_ {0};
+//  std::vector<std::shared_ptr<PartEntry>> part_ { };
+//  std::vector<uint8_t> info_ { };
+//  RelocationData relocation_data_;
+  return ret;
+}
+
+
+/**
  Load a Package file and read the internal data representation.
  \param[in] package_file_name path and name
  \return 0 if successful
@@ -220,7 +280,7 @@ int Package::load(const std::string &package_file_name)
     pkg_bytes_ = std::make_shared<PackageBytes>();
     pkg_bytes_->assign(std::istreambuf_iterator<char>{source_file}, {});
     file_name_ = package_file_name;
-    std::cout << "readPackage: \"" << file_name_ << "\" package read (" << pkg_bytes_->size() << " bytes)." << std::endl;
+//    std::cout << "readPackage: \"" << file_name_ << "\" package read (" << pkg_bytes_->size() << " bytes)." << std::endl;
     return load();
   }
   std::cout << "readPackage: Unable to read file \"" << package_file_name << "\"." << std::endl;
@@ -233,7 +293,7 @@ int Package::load(const std::string &package_file_name)
  \param[in] assembler_file_name path and name
  \return 0 if successful
  */
-int Package::writeAsm(std::string assembler_file_name)
+int Package::writeAsm(const std::string &assembler_file_name)
 {
   std::ofstream asm_file { assembler_file_name };
   if (asm_file.fail()) {
@@ -294,11 +354,11 @@ int Package::writeAsm(std::string assembler_file_name)
 }
 
 /**
- Compare this package to the package inside another package file.
+ Compare this package byte-by-byte to another package file.
  \param[in] other_package_file file path and name of the contender
  \return 0 if file content creates the same binary representation
  */
-int Package::compare(std::string other_package_file) {
+int Package::compareFile(const std::string &other_package_file) {
   std::vector<uint8_t> new_pkg;
   std::ifstream new_file { other_package_file, std::ios::binary };
   if (new_file) {
@@ -311,15 +371,28 @@ int Package::compare(std::string other_package_file) {
       for (i=0; i<n; ++i) {
         if (new_pkg[i] != pkg_bytes_->at(i)) break;
       }
-      std::cout << "ERROR: compareBinaries: Packages differ starting at 0x"
+      std::cout << "ERROR: compareFile: Packages differ starting at 0x"
       << std::setw(8) << std::setfill('0') << std::hex << i << std::dec
       << " = " << i << "!" << std::endl;
     }
     std::cout << std::endl;
     return 0;
   }
-  std::cout << "compareBinaries: Unable to read new file \"" << other_package_file << "\"." << std::endl;
+  std::cout << "compareFile: Unable to read new file \"" << other_package_file << "\"." << std::endl;
   return -1;
 }
 
+/**
+ Compare this package to the the contents of another package file.
+ \param[in] other_package_file file path and name of the contender
+ \return 0 if file content creates the same binary representation
+ */
+int Package::compareContents(const std::string &other_package_file) {
+  Package other;
+  if (other.load(other_package_file)==-1) {
+    std::cout << "ERROR: compareContents: Can'r read package \"" << other_package_file << "\"." << std::endl;
+    return -1;
+  }
+  return compare(other);
+}
 

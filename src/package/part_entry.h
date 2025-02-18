@@ -54,6 +54,7 @@ public:
   int writeAsm(std::ofstream &f);
   int writeAsmInfo(std::ofstream &f);
   int writeAsmPartData(std::ofstream &f);
+  int compare(PartEntry &other);
 };
 
 } // namespace pkg

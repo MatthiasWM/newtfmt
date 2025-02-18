@@ -61,6 +61,7 @@ class Package {
 
   int load();
   int writeAsm(std::ofstream &f);
+  int compare(Package &other);
 
 public:
   Package() = default;
@@ -71,8 +72,9 @@ public:
   Package& operator=(Package const&& rhs) = delete;
 
   int load(const std::string &package_file_name);
-  int writeAsm(std::string assembler_file_name);
-  int compare(std::string other_package_file);
+  int writeAsm(const std::string &assembler_file_name);
+  int compareFile(const std::string &other_package_file);
+  int compareContents(const std::string &other_package_file);
 };
 
 

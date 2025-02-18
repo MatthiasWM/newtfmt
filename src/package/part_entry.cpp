@@ -183,3 +183,27 @@ int PartEntry::writeAsmPartData(std::ofstream &f) {
   return part_data_->writeAsm(f);
 }
 
+/**
+ Compare this part entry with the other part entry.
+ \param[in] other the other part entry
+ \return 0 if they are the same.
+ */
+int PartEntry::compare(PartEntry &other)
+{
+  // TODO: write this
+//  int index_;
+//  uint32_t offset_ {0};
+//  uint32_t size_ {0};
+//  uint32_t size2_ {0};
+//  std::string type_;
+//  uint32_t reserved_ {0};
+//  uint32_t flags_ {0};
+//  uint16_t info_offset_ {0};
+//  uint16_t info_length_ {0};
+//  uint16_t compressor_offset_ {0};
+//  uint16_t compressor_length_ {0};
+//  std::string info_;
+//  std::shared_ptr<PartData> part_data_;
+  (void)other;
+  return -1;
+}

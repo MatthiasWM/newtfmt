@@ -41,6 +41,19 @@ int PartData::index() {
   return part_entry_.index();
 }
 
+/**
+ Compare this part with the other part.
+ \param[in] other the other part
+ \return 0 if they are the same.
+ */
+int PartData::compare(PartData &other)
+{
+  std::cout << "WARNING: Part type not supported;" << std::endl;
+  (void)other;
+  return -1;
+}
+
+
 /** \class pkg::PartDataGeneric
  Holds the uninterpreted data of a Part with raw data or unknown type.
  */
@@ -521,4 +534,16 @@ bool PartDataNOS::addLabel(std::string label, ObjectSymbol *symbol) {
     // already in list, caller may try again with another label
     return false;
   }
+}
+
+/**
+ Compare this NOS part with the other NOS part.
+ \param[in] other the other part which must be NOS as well
+ \return 0 if they are the same.
+ */
+int PartDataNOS::compare(PartData &other)
+{
+  // TODO: write this
+  (void)other;
+  return -1;
 }

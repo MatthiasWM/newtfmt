@@ -38,6 +38,7 @@ public:
   virtual ~PartData() = default;
   virtual int load(PackageBytes &p) = 0;
   virtual int writeAsm(std::ofstream &f) = 0;
+  virtual int compare(PartData &other);
   int index();
 };
 
@@ -122,6 +123,7 @@ public:
   int writeAsm(std::ofstream &f) override;
   std::string asmRef(uint32_t ref);
   bool addLabel(std::string label, ObjectSymbol *symbol);
+  int compare(PartData &other) override;
 };
 
 } // namespace pkg
