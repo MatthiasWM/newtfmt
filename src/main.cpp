@@ -114,7 +114,6 @@ int writeAsm(std::string assembler_file_name)
   asm_file << "\t.file\t\"" << my_pkg_name << "\"" << std::endl;
   asm_file << "\t.data" << std::endl << std::endl;
 
-
   int skip = my_pkg.writeAsm(asm_file);
   if (skip < (int)my_pkg_bytes.size()) {
     std::cout << "WARNING: Package has " << my_pkg_bytes.size()-skip << " more bytes than defined." << std::endl;
@@ -128,7 +127,6 @@ int writeAsm(std::string assembler_file_name)
     }
   }
 
-//  std::cout << "writeAsm: Wrote \"" << assembler_file_name << "\"." << std::endl;
   return 0;
 }
 
@@ -177,7 +175,7 @@ int objToBin(std::string object_file_name, std::string new_package_name)
 /**
  Compare a package file with the currently loaded package byte by byte.
  \param[in] new_package_name path and file name
- \return 0 if data is indentical
+ \return 0 if data is identical
  */
 int compareBinaries(std::string new_package_name)
 {
@@ -236,6 +234,7 @@ int main_package_test(int argc, const char * argv[])
   return 0;
 }
 
+#if 0
 
 // Some Globals:
 //  prettyPrint: true,
@@ -243,30 +242,34 @@ int main_package_test(int argc, const char * argv[])
 //  printLength: nil,
 
 // Using Clang on ARM64, these are all indeed compile time constants!
-constexpr nos::Object gSymObjArray { nos::Object::Symbol("array") };
+constexpr nos::Symbol gSymObjArray { "array" };
 constexpr nos::Ref gSymArray { gSymObjArray };
 constexpr nos::Ref r32 { 32 };
 
 // Creating a read-only Array
 constexpr nos::Ref aa[] = { 3, 4, 5 };
-constexpr nos::Object a { nos::Object::Array(gSymArray, 3, aa) };
+constexpr nos::Array a { gSymArray, 3, aa };
 
 // Creating a read-only Frame
-constexpr nos::Object gSymObjTop { nos::Object::Symbol("top") };
+constexpr nos::Symbol gSymObjTop { "top" };
 constexpr nos::Ref gSymTop { gSymObjTop };
-constexpr nos::Object gSymObjLeft { nos::Object::Symbol("left") };
+constexpr nos::Symbol gSymObjLeft { "left" };
 constexpr nos::Ref gSymLeft { gSymObjLeft };
 constexpr nos::Ref f_map_symbols[] = { nos::RefNIL, gSymTop, gSymLeft };
-constexpr nos::Object f_map { nos::Object::Array(0, 3, f_map_symbols) };
-constexpr nos::Ref f_values[] = { 10, 20 };
-constexpr nos::Object f { nos::Object::Frame(f_map, 2, f_values) };
+constexpr nos::Array f_map { 0, 3, f_map_symbols };
+constexpr nos::Object v205 { 20.5 };
+constexpr nos::Ref f_values[] = { 10, v205 };
+constexpr nos::Frame f { f_map, 2, f_values };
+
+// Create a read-only array
+constexpr nos::Array gArray { gSymArray, 2, f_values };
+constexpr nos::Ref gRefArray { gArray };
 
 constexpr nos::Object gObjHello { "Hello world!" };
 constexpr nos::Ref gRefHello { gObjHello };
 
 constexpr nos::Object gObjPi { 3.141592654 };
 constexpr nos::Ref gRefPi { gObjPi };
-
 
 int main(int argc, const char * argv[])
 {
@@ -280,6 +283,10 @@ int main(int argc, const char * argv[])
   nos::Print(U'😀');      // support for full sized unicode characters
   nos::Print(gRefHello);  // static strings
   nos::Print(gRefPi);     // floating point values
+  nos::Print(gArray);     // array
+  nos::Print(gRefArray);  // array
 
   return 0;
 }
+
+#endif

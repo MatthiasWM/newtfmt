@@ -29,19 +29,21 @@
 
 namespace nos {
 
-class alignas(long)  Object
+class alignas(uintptr_t) Object
 {
   friend class Ref;
 
+protected:
   enum class Tag: uint8_t {
-    binary, array, large_binary, frame
+    binary, array, large_binary, frame,
+    real, symbol, native_ptr, reserved
   };
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   typedef struct {
-    uint8_t slotted_:1;
-    uint8_t frame_:1;
-    uint8_t free_:1;
+    uint8_t type0_:1;
+    uint8_t type1_:1;
+    uint8_t type2_:1;
     uint8_t marked_:1;
     uint8_t locked_:1;
     uint8_t forward_:1;
@@ -50,8 +52,8 @@ class alignas(long)  Object
   } TagFlags;
 
   typedef struct {
-    Tag tag_:2;
-    uint8_t flags_:6;
+    Tag tag_:3;
+    uint8_t flags_:5;
   } Tags;
 #else
 #error "Sorry, not implemented"
@@ -60,36 +62,41 @@ class alignas(long)  Object
   typedef struct {
     Ref    class_;
     char   *data_;
-  } Binary;
+  } Binary_;
 
   typedef struct {
     Ref    class_;
 //    const  IndirectBinaryProcs * procs;
     char   *data_;
-  } LargeBinary;
+  } LargeBinary_;
 
   typedef struct {
     Ref    class_;
     Ref    *slot_;
     uint32_t reserve_;
-  } _Array;
+  } Array_;
 
   typedef struct {
     Ref    map_;
     Ref    *slot_;
     uint32_t reserve_;
-  } _Frame;
+  } Frame_;
 
   typedef struct {
     Ref    class_;
     Real   value_;
-  } _Real;
+  } Real_;
 
   typedef struct {
     Ref    class_;
     char   *string_;
     uint32_t hash_;
-  } _Symbol;
+  } Symbol_;
+
+  typedef struct {
+    Ref    class_;
+    void  *value_;
+  } NativePtr_;
 
   union {
     TagFlags f;
@@ -99,12 +106,13 @@ class alignas(long)  Object
   uint32_t size_:24;
   uint32_t gc_ { 0 };
   union {
-    Binary bin;
-    LargeBinary lbo;
-    _Array array;
-    _Frame frame;
-    _Real real;
-    _Symbol sym;
+    Binary_ binary;
+    LargeBinary_ lbo;
+    Array_ array;
+    Frame_ frame;
+    Real_ real;
+    Symbol_ symbol;
+    NativePtr_ ptr;
   };
 //  Object(const Object&) = delete;
 //  Object(Object&&) = delete;
@@ -122,36 +130,36 @@ class alignas(long)  Object
   static constexpr uint32_t _hash(const char* str) {
     return _hash1(str) * 0x9E3779B9;
   }
+
+  constexpr Object(const Array_ a, uint32_t num_slots)
+  : t { Tag::array, 0x10 },
+    size_ { static_cast<uint32_t>(num_slots*sizeof(Ref)) },
+    array { a }
+  { }
+
+  constexpr Object(const Frame_ f, uint32_t num_slots)
+  : t { Tag::frame, 0x10 },
+    size_ { static_cast<uint32_t>(num_slots*sizeof(Ref)) },
+    frame { f }
+  { }
+
+  constexpr Object(const Symbol_ sym_arg)
+  : t { Tag::symbol, 0x10 },
+    size_ { static_cast<uint32_t>(_strlen(sym_arg.string_)+1) },
+    symbol { sym_arg }
+  { }
+
 public:
-  Object() : size_(0), gc_(0) { }
-
-  constexpr Object(uint32_t hash, const char *symbol)
-  : t { Tag::binary, 0x10 }, size_( _strlen(symbol) ), sym { RefSymbolClass, (char*)symbol, hash }
-  { }
-
-  constexpr Object(uint32_t)
-  : t { Tag::frame, 0x10 }, size_{ 0 }, frame { 0, 0, 0 }
-  { }
 
   constexpr Object(Tag tag, Ref class_or_map, uint32_t num_slots, const Ref *values)
-  : t { tag, 0x10 }, size_{ static_cast<uint32_t>(num_slots*sizeof(Ref)) }, frame { class_or_map, (Ref*)values, 0 }
+  : t { tag, 0x10 },
+    size_{ static_cast<uint32_t>(num_slots*sizeof(Ref)) },
+    frame { class_or_map, (Ref*)values, 0 }
   { }
 
   constexpr Object(const char *string);
 
   constexpr Object(Real value);
-
-  static constexpr Object Array(Ref obj_class, uint32_t num_slots, const Ref *values) {
-    return Object(Tag::array, obj_class, num_slots, values);
-  }
-
-  static constexpr Object Frame(Ref map, uint32_t num_slots, const Ref *values) {
-    return Object(Tag::frame, map, num_slots, values);
-  }
-
-  static constexpr Object Symbol(const char *symbol) {
-    return Object(_hash(symbol), symbol);
-  }
 
   Index size() const { return size_; }
   uint32_t gc() const { return gc_; }
@@ -166,23 +174,45 @@ public:
 
   int Print(PrintState &ps) const;
 
-}; // no need for `__attribute__((packed));`, sizeof(Object) is 32 bytes on a 64bit CPU.
+};
+
+class alignas(uintptr_t) Array: public Object
+{
+public:
+  constexpr Array(Ref obj_class, uint32_t num_slots, const Ref *values)
+  : Object( Array_{ obj_class, const_cast<Ref*>(values), 0 }, num_slots) { }
+};
+
+class alignas(uintptr_t) Frame: public Object
+{
+public:
+  constexpr Frame(Ref map, uint32_t num_slots, const Ref *values)
+  : Object( Frame_{ map, const_cast<Ref*>(values), 0 }, num_slots) { }
+};
+
+class alignas(uintptr_t) Symbol: public Object
+{
+public:
+  constexpr Symbol(const char *symbol)
+  : Object( Symbol_{ RefSymbolClass, const_cast<char*>(symbol), _hash(symbol) } ) { }
+};
+
 
 int symcmp(const char *a, const char *b);
 int SymbolCompare(Ref sym1, Ref sym2);
 
-constexpr Object gSymObjString { Object::Symbol("string") };
+constexpr Symbol gSymObjString { "string" };
 constexpr Ref gSymString { gSymObjString };
 
-constexpr Object gSymObjReal { Object::Symbol("real") };
+constexpr Symbol gSymObjReal { "real" };
 constexpr Ref gSymReal { gSymObjReal };
 
 constexpr Object::Object(const char *string)
-: t { Tag::binary, 0x10 }, size_{ _strlen(string) }, bin { gSymString, const_cast<char*>(string) }
+: t { Tag::binary, 0x10 }, size_{ _strlen(string)+1 }, binary{ gSymString, const_cast<char*>(string) }
 { }
 
 constexpr Object::Object(Real value)
-: t { Tag::binary, 0x10 }, size_{ 0 }, real { gSymReal, value }
+: t { Tag::real, 0x10 }, size_{ 0 }, real { gSymReal, value }
 { }
 
 

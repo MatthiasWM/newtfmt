@@ -22,7 +22,7 @@
 using namespace nos;
 
 Ref Object::GetSlot(Index i) const {
-  if (f.slotted_) {
+  if ((t.tag_==Tag::array) || (t.tag_==Tag::frame)) {
     if (i<(Index)(size()/sizeof(Ref)))
       return frame.slot_[i];
     else
@@ -58,13 +58,13 @@ int nos::symcmp(const char *s1, const char *s2)
 
 int Object::SymbolCompare(const Object *other) const
 {
-  if (sym.hash_ != other->sym.hash_) {
-    if (sym.hash_ > other->sym.hash_)
+  if (symbol.hash_ != other->symbol.hash_) {
+    if (symbol.hash_ > other->symbol.hash_)
       return 1;
     else
       return -1;
   }
-  return symcmp(sym.string_, other->sym.string_);
+  return symcmp(symbol.string_, other->symbol.string_);
 }
 
 int SymbolCompare(Ref sym1, Ref sym2)
@@ -80,19 +80,13 @@ int Object::Print(PrintState &ps) const
 {
   switch (t.tag_) {
     case Tag::binary:
-      if (bin.class_ == RefSymbolClass) {
-        if (!ps.symbol_expected())
-          fprintf(ps.out_, "'");
-        fprintf(ps.out_, "%s", sym.string_);
-//    } else if 'samples, 'instructions, 'code, 'bits, 'mask, 'cbits
-      } else if (bin.class_.GetObject()->SymbolCompare(&gSymObjString)==0) {
-        fprintf(ps.out_, "\"%s\"", bin.data_); // TODO: must escape characters, is \0 always at the end?
-      } else if (bin.class_.GetObject()->SymbolCompare(&gSymObjReal)==0) {
-        fprintf(ps.out_, "%g", real.value_);
+      if (binary.class_.GetObject()->SymbolCompare(&gSymObjString)==0) {
+        fprintf(ps.out_, "\"%s\"", binary.data_); // TODO: must escape characters, is \0 always at the end?
       } else {
+        //'samples, 'instructions, 'code, 'bits, 'mask, 'cbits etc.
         fprintf(ps.out_, "binary(");
         ps.expect_symbol(true);
-        bin.class_.Print(ps);
+        binary.class_.Print(ps);
         ps.expect_symbol(false);
         fprintf(ps.out_, ": <%ld bytes>)", size());
       }
@@ -100,7 +94,7 @@ int Object::Print(PrintState &ps) const
     case Tag::large_binary:
       fprintf(ps.out_, "large_binary('");
       ps.expect_symbol(true);
-      bin.class_.Print(ps);
+      binary.class_.Print(ps);
       ps.expect_symbol(false);
       fprintf(ps.out_, ": <%ld bytes>)", size());
       break;
@@ -116,7 +110,7 @@ int Object::Print(PrintState &ps) const
       for (i=0; i<n; ++i) {
         ps.tab();
         array.slot_[i].Print(ps);
-        if (i<n) fprintf(ps.out_, ",");
+        if (i+1<n) fprintf(ps.out_, ",");
         fprintf(ps.out_, "\n");
       }
       ps.decr_depth();
@@ -134,13 +128,27 @@ int Object::Print(PrintState &ps) const
         ps.expect_symbol(false);
         fprintf(ps.out_, ": ");
         GetSlot(i).Print(ps);
-        if (i<n) fprintf(ps.out_, ",");
+        if (i+1<n) fprintf(ps.out_, ",");
         fprintf(ps.out_, "\n");
       }
       ps.decr_depth();
       ps.tab();
       fprintf(ps.out_, "}");
     } break;
+    case Tag::real:
+      fprintf(ps.out_, "%g", real.value_);
+      break;
+    case Tag::symbol:
+      if (!ps.symbol_expected())
+        fprintf(ps.out_, "'");
+      fprintf(ps.out_, "%s", symbol.string_);
+      break;
+    case Tag::native_ptr:
+      fprintf(ps.out_, "<NativePtr>");
+      break;
+    case Tag::reserved:
+      fprintf(ps.out_, "<Reserved>");
+      break;
   }
   return 0;
 }
