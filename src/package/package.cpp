@@ -34,82 +34,90 @@ using namespace pkg;
  \param[in] p package data stream
  \return 0 if succeeded
  */
-int Package::load(PackageBytes &p) {
-  p.rewind();
-  signature_ = p.get_cstring(8, false);
+int Package::load() {
+  if (!pkg_bytes_) {
+    std::cout << "ERROR: package bytes not initialized.\n";
+    return -1;
+  }
+  if (!pkg_bytes_->size()) {
+    std::cout << "ERROR: no package bytes loaded, size is 0.\n";
+    return -1;
+  }
+  pkg_bytes_->rewind();
+  signature_ = pkg_bytes_->get_cstring(8, false);
   if ((signature_ != "package0") && (signature_ != "package1")) {
     std::cout << "ERROR: unknown signature \"" << signature_ << "\"\n";
     return -1;
   }
-  type_ = p.get_cstring(4, false);
-  flags_ = p.get_uint();
+  type_ = pkg_bytes_->get_cstring(4, false);
+  flags_ = pkg_bytes_->get_uint();
   if (flags_ & 0x08ffffff)
     std::cout << "WARNING: unknown flag: "
     << std::setw(4) << std::setfill('0') << std::hex
     << (flags_ & 0x08ffffff) << std::endl;
   if (flags_ & 0x01000000)
     std::cout << "INFO: Package certified to run on Schlumberger Watson." << std::endl;
-  version_ = p.get_uint();
-  copyright_start_ = p.get_ushort();
+  version_ = pkg_bytes_->get_uint();
+  copyright_start_ = pkg_bytes_->get_ushort();
   if (copyright_start_ != 0)
     std::cout << "WARNING: Copyright offset should be 0.\n";
-  copyright_length_ = p.get_ushort();
-  name_start_ = p.get_ushort();
+  copyright_length_ = pkg_bytes_->get_ushort();
+  name_start_ = pkg_bytes_->get_ushort();
   // TODO: the following is a bad assumption and creates a wrong offset by using the wrong labels
   if (name_start_ != copyright_start_ + copyright_length_)
     std::cout << "WARNING: Name offset should be " << copyright_start_ + copyright_length_
     << ", but it's " << name_start_ << ".\n";
-  name_length_ = p.get_ushort();
+  name_length_ = pkg_bytes_->get_ushort();
   if (name_length_ == 0)
     std::cout << "WARNING: Name length can't be 0.\n";
-  size_ = p.get_uint();
-  if (size_ < p.size())
-    std::cout << "WARNING: size entry does not match file size (" << size_ << "!=" << p.size() << ").\n";
-  if (size_ > p.size()) {
-    std::cout << "ERROR: expected size is less than file size, file is cropped (" << size_ << "!=" << p.size() << ").\n";
+  size_ = pkg_bytes_->get_uint();
+  if (size_ < pkg_bytes_->size())
+    std::cout << "WARNING: size entry does not match file size (" << size_ << "!=" << pkg_bytes_->size() << ").\n";
+  if (size_ > pkg_bytes_->size()) {
+    std::cout << "ERROR: expected size is less than file size, file is cropped (" << size_ << "!=" << pkg_bytes_->size() << ").\n";
     return -1;
   }
-  date_ = p.get_uint();
-  reserved2_ = p.get_uint();
+  date_ = pkg_bytes_->get_uint();
+  reserved2_ = pkg_bytes_->get_uint();
 //  TODO: this field is documented as 0, but it is set in many packages, and seem to be holding the "Modification Data"
 //  if (reserved2_ != 0)
 //    std::cout << "WARNING: Reserved2 should be 0, but it is " << reserved2_ << " = 0x"
 //    << std::setw(8) << std::setfill('0') << std::hex << reserved2_ << std::dec << ".\n";
-  reserved3_ = p.get_uint();
+  reserved3_ = pkg_bytes_->get_uint();
   if (reserved3_ != 0)
     std::cout << "WARNING: Reserved3 should be 0.\n";
-  directory_size_ = p.get_uint();
-  num_parts_ = p.get_uint();
+  directory_size_ = pkg_bytes_->get_uint();
+  num_parts_ = pkg_bytes_->get_uint();
   if (num_parts_ > 32)
     std::cout << "WARNING: Unlikely number of parts (" << num_parts_ << ").\n";
   for (int i = 0; i < (int)num_parts_; ++i) {
     part_.push_back(std::make_shared<PartEntry>(i));
-    part_[i]->load(p);
+    part_[i]->load(*pkg_bytes_);
   }
-  vdata_start_ = p.tell();
+  vdata_start_ = pkg_bytes_->tell();
   if (copyright_length_) {
-    copyright_ = p.get_ustring(copyright_length_/2-1);
+    copyright_ = pkg_bytes_->get_ustring(copyright_length_/2-1);
   }
   if (name_length_) {
-    name_ = p.get_ustring(name_length_/2-1);
+    name_ = pkg_bytes_->get_ustring(name_length_/2-1);
   }
-  for (auto &part: part_) part->loadInfo(p);
+  for (auto &part: part_) part->loadInfo(*pkg_bytes_);
   // NTK sneaks a message into the variable data area after the last info
   // and before the relocation data and parts start.
   // "Newton™ ToolKit Package © 1992-1997, Apple Computer, Inc."
-  info_length_ = directory_size_ - p.tell(); // 58 bytes + 2 bytes padding
-  info_ = p.get_data(info_length_);
+  info_length_ = directory_size_ - pkg_bytes_->tell(); // 58 bytes + 2 bytes padding
+  info_ = pkg_bytes_->get_data(info_length_);
 //  std::string info((char*)&info_[0], info_length_);
 //  std::cout << "PackageInfo: " << info << std::endl;
 
   // Relocation Data if kRelocationFlag is set
   if (flags_ & 0x04000000) {
-    relocation_data_.load(p);
+    relocation_data_.load(*pkg_bytes_);
 //    std::cout << "WARNING: Relocation Data not supported." << std::endl;
   }
 
   // Part Data
-  for (auto &part: part_) part->loadPartData(p);
+  for (auto &part: part_) part->loadPartData(*pkg_bytes_);
 
   return 0;
 }
@@ -198,4 +206,120 @@ int Package::writeAsm(std::ofstream &f) {
 
   return bytes;
 }
+
+/**
+ Load a Package file and read the internal data representation.
+ \param[in] package_file_name path and name
+ \return 0 if successful
+ */
+int Package::load(const std::string &package_file_name)
+{
+  file_name_ = package_file_name;
+  std::ifstream source_file { package_file_name, std::ios::binary };
+  if (source_file) {
+    pkg_bytes_ = std::make_shared<PackageBytes>();
+    pkg_bytes_->assign(std::istreambuf_iterator<char>{source_file}, {});
+    file_name_ = package_file_name;
+    std::cout << "readPackage: \"" << file_name_ << "\" package read (" << pkg_bytes_->size() << " bytes)." << std::endl;
+    return load();
+  }
+  std::cout << "readPackage: Unable to read file \"" << package_file_name << "\"." << std::endl;
+  return -1;
+}
+
+
+/**
+ Write a Package as an ARM32 assembler file.
+ \param[in] assembler_file_name path and name
+ \return 0 if successful
+ */
+int Package::writeAsm(std::string assembler_file_name)
+{
+  std::ofstream asm_file { assembler_file_name };
+  if (asm_file.fail()) {
+    std::cout << "writeAsm: Unable to write assembler file \"" << assembler_file_name << "\"." << std::endl;
+    return -1;
+  }
+
+  asm_file << "@" << std::endl;
+  asm_file << "@ Assembler file generated from Newton Package" << std::endl;
+  asm_file << "@" << std::endl << std::endl;
+
+  asm_file << "\t.macro\tref_magic index\n"
+  << "\t.int\t((\\index)<<2)|3\n"
+  << "\t.endm\n\n";
+
+  asm_file << "\t.macro\tref_integer value\n"
+  << "\t.int\t((\\value)<<2)\n"
+  << "\t.endm\n\n";
+
+  asm_file << "\t.macro\tref_pointer label\n"
+  << "\t.int\t\\label + 1\n"
+  << "\t.endm\n\n";
+
+  asm_file << "\t.macro\tref_pointer_invalid offset\n"
+  << "\t.int\t\\offset\n"
+  << "\t.endm\n\n";
+
+  asm_file << "\t.macro\tref_unichar value\n"
+  << "\t.int\t((\\value)<<4)|10\n"
+  << "\t.endm\n\n";
+
+  asm_file << "\t.macro\tref_nil\n"
+  << "\t.int\t0x00000002\n"
+  << "\t.endm\n\n";
+
+  asm_file << "\t.macro\tref_true\n"
+  << "\t.int\t0x0000001a\n"
+  << "\t.endm\n\n";
+
+
+  asm_file << "\t.file\t\"" << file_name_ << "\"" << std::endl;
+  asm_file << "\t.data" << std::endl << std::endl;
+
+  int skip = writeAsm(asm_file);
+  if (skip < (int)pkg_bytes_->size()) {
+    std::cout << "WARNING: Package has " << pkg_bytes_->size()-skip << " more bytes than defined." << std::endl;
+    asm_file << "@ ===== Extra data in file" << std::endl;
+    for (auto it = pkg_bytes_->begin()+skip; it != pkg_bytes_->end(); ++it) {
+      uint8_t b = *it;
+      asm_file << "\t.byte\t0x"
+      << std::setw(2) << std::setfill('0') << std::hex << (int)b
+      << "\t@ " << (char)( ((b > 32) && (b < 127)) ? b : '.' )
+      << std::endl;
+    }
+  }
+
+  return 0;
+}
+
+/**
+ Compare this package to the package inside another package file.
+ \param[in] other_package_file file path and name of the contender
+ \return 0 if file content creates the same binary representation
+ */
+int Package::compare(std::string other_package_file) {
+  std::vector<uint8_t> new_pkg;
+  std::ifstream new_file { other_package_file, std::ios::binary };
+  if (new_file) {
+    new_pkg.assign(std::istreambuf_iterator<char>{new_file}, {});
+    if (new_pkg == *pkg_bytes_) {
+      //      std::cout << "compareBinaries: Packages are identical." << std::endl;
+      std::cout << "OK." << std::endl;
+    } else {
+      int i, n = std::min((int)new_pkg.size(), (int)pkg_bytes_->size());
+      for (i=0; i<n; ++i) {
+        if (new_pkg[i] != pkg_bytes_->at(i)) break;
+      }
+      std::cout << "ERROR: compareBinaries: Packages differ starting at 0x"
+      << std::setw(8) << std::setfill('0') << std::hex << i << std::dec
+      << " = " << i << "!" << std::endl;
+    }
+    std::cout << std::endl;
+    return 0;
+  }
+  std::cout << "compareBinaries: Unable to read new file \"" << other_package_file << "\"." << std::endl;
+  return -1;
+}
+
 

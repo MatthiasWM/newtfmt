@@ -32,6 +32,12 @@ class PackageBytes : public std::vector<uint8_t>
 
 public:
   PackageBytes() = default;
+  ~PackageBytes() = default;
+  PackageBytes(PackageBytes const& rhs) = delete;
+  PackageBytes(PackageBytes const&& rhs) = delete;
+  PackageBytes& operator=(PackageBytes const& rhs) = delete;
+  PackageBytes& operator=(PackageBytes const&& rhs) = delete;
+
   void rewind();
   void seek_set(int ix);
   int tell();

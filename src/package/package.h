@@ -33,8 +33,8 @@ class PartEntry;
 class PackageBytes;
 
 class Package {
-  std::string signature_;
-  std::string type_;
+  std::string signature_ { };
+  std::string type_ { };
   uint32_t flags_ {0};
   uint32_t version_ {0};
   uint16_t copyright_start_ {0};
@@ -50,15 +50,29 @@ class Package {
   uint32_t vdata_start_ {0};
 //  uint32_t info_start_ {0};
   uint32_t info_length_ {0};
-  std::vector<std::shared_ptr<PartEntry>> part_;
-  std::string copyright_;
-  std::string name_;
-  std::vector<uint8_t> info_;
+  std::vector<std::shared_ptr<PartEntry>> part_ { };
+  std::string copyright_ { };
+  std::string name_ { };
+  std::vector<uint8_t> info_ { };
   RelocationData relocation_data_;
+
+  std::string file_name_ { };
+  std::shared_ptr<PackageBytes> pkg_bytes_ { nullptr };
+
+  int load();
+  int writeAsm(std::ofstream &f);
+
 public:
   Package() = default;
-  int load(PackageBytes &p);
-  int writeAsm(std::ofstream &f);
+  ~Package() = default;
+  Package(Package const& rhs) = delete;
+  Package(Package const&& rhs) = delete;
+  Package& operator=(Package const& rhs) = delete;
+  Package& operator=(Package const&& rhs) = delete;
+
+  int load(const std::string &package_file_name);
+  int writeAsm(std::string assembler_file_name);
+  int compare(std::string other_package_file);
 };
 
 
