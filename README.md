@@ -86,6 +86,9 @@ add an ARM32 disassembler if we want to dive deeper int that.
 
 - ✓ binary compare ignoring alignment filler
 - ✓ run through test files for verification
+- write bytecode
+- verify reading bytecode
+- symbolic offsets in bytecode
 - run through test files and find modifications
 - verify that modified files still load and run correctly
 

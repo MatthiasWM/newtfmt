@@ -98,6 +98,7 @@ public:
   int writeAsm(std::ofstream &f, PartDataNOS &p) override;
   void makeAsmLabel(PartDataNOS &p) override;
   int compare(Object &other_obj) override;
+  std::string symbol() { return symbol_; }
 };
 
 class ObjectSlotted : public Object {
@@ -127,6 +128,7 @@ public:
   int load(PackageBytes &p) override;
   int writeAsm(std::ofstream &f) override;
   std::string asmRef(uint32_t ref);
+  std::string getSymbol(uint32_t ref);
   bool addLabel(std::string label, ObjectSymbol *symbol);
   int compare(PartData &other_part) override;
 };

@@ -23,6 +23,8 @@
 #include "part_entry.h"
 #include "tools/tools.h"
 
+#include "nos/objects.h"
+
 #include <iostream>
 #include <fstream>
 #include <ios>
@@ -254,9 +256,99 @@ int ObjectBinary::load(PackageBytes &p)
 int ObjectBinary::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
   f << "@ ----- " << offset_ << " Binary Object (" << size_-4 << " bytes)" << std::endl;
+  std::string klass = p.getSymbol(class_);
   Object::writeAsm(f, p);
   f << "\t" << p.asmRef(class_) << "\t@ class" << std::endl;
-  write_data(f, data_);
+  if (nos::symcmp(klass.c_str(), "instructions")==0) {
+    f << std::setfill(' ');
+    int n = (int)data_.size();
+    for (int i=0; i<n; ) {
+      uint8_t cmd = data_[i++];
+      uint8_t a = (cmd & 0xf8) >> 3;
+      uint16_t b = (cmd & 0x07);
+      if (b==7) {
+        b = data_[i]<<8 | data_[i+1]; i += 2;
+        f << "\tnscmd3\t" << std::setw(2) << (int)a << ", " << std::setw(5) << (int)b << "\t@ ";
+      } else {
+        f << "\tnscmd1\t" << std::setw(2) << (int)a << ", " << std::setw(5) << (int)b << "\t@ ";
+      }
+      switch (a) {
+        case 0:
+          switch (b) {
+            case 0: f << "pop"; break;
+            case 1: f << "dup"; break;
+            case 2: f << "return"; break;
+            case 3: f << "push_self"; break;
+            case 4: f << "set_lex_scope"; break;
+            case 5: f << "iter_next"; break;
+            case 6: f << "iter_done"; break;
+            case 7: f << "pop_handlers"; break;
+          }
+          break;
+        case 3: f << "push " << b; break;
+        case 4: f << "push_const " << (int16_t)b; break;
+        case 5: f << "call " << b; break;
+        case 6: f << "invoke " << b; break;
+        case 7: f << "send " << b; break;
+        case 8: f << "send_if_defined " << b; break;
+        case 9: f << "resend " << b; break;
+        case 10: f << "resend_if_defined " << b; break;
+        case 11: f << "branch " << (int16_t)b; break;
+        case 12: f << "branch_if_true " << (int16_t)b; break;
+        case 13: f << "branch_if_false " << (int16_t)b; break;
+        case 14: f << "find_var " << b; break;
+        case 15: f << "get_var " << b; break;
+        case 16: f << "make_frame " << b; break;
+        case 17: f << "make_array " << b; break;
+        case 18: f << "get_path " << b; break;
+        case 19: f << "set_path " << b; break;
+        case 20: f << "set_var " << b; break;
+        case 21: f << "find_and_set_var " << b; break;
+        case 22: f << "incr_var " << b; break;
+        case 23: f << "branch_if_loop_not_done " << b; break;
+        case 24:
+          switch (b) {
+            case 0: f << "add"; break;
+            case 1: f << "subtract"; break;
+            case 2: f << "aref"; break;
+            case 3: f << "set_aref"; break;
+            case 4: f << "equals"; break;
+            case 5: f << "not"; break;
+            case 6: f << "not_equals"; break;
+            case 7: f << "multiply"; break;
+            case 8: f << "divide"; break;
+            case 9: f << "div"; break;
+            case 10: f << "less_than"; break;
+            case 11: f << "greater_than"; break;
+            case 12: f << "greater_or_equal"; break;
+            case 13: f << "less_or_equal"; break;
+            case 14: f << "bit_and"; break;
+            case 15: f << "bit_or"; break;
+            case 16: f << "bit_not"; break;
+            case 17: f << "new_iterator"; break;
+            case 18: f << "length"; break;
+            case 19: f << "clone"; break;
+            case 20: f << "set_class"; break;
+            case 21: f << "add_array_slot"; break;
+            case 22: f << "stringer"; break;
+            case 23: f << "has_path"; break;
+            case 24: f << "class_of"; break;
+          }
+          break;
+        case 25: f << "new_handlers " << b; break;
+      }
+      f << std::endl;
+    }
+    f << std::setfill('0');
+  } else if (nos::symcmp(klass.c_str(), "real")==0) {
+    union { uint64_t x; double d; } v;
+    ::memcpy(&v.x, &data_[0], 8);
+    v.x = htonll(v.x);
+    f << "\t@.double\t" << v.d << std::endl;
+    write_data(f, data_);
+  } else {
+    write_data(f, data_);
+  }
   return size_;
 }
 
@@ -542,9 +634,13 @@ int PartDataNOS::writeAsm(std::ofstream &f) {
 #if 0
     write_data(f, obj.second->padding_);
 #else
-    int n_fill = (int)obj.second->padding_.size();
-    if (n_fill > 0)
-      f << "\t.space\t" << n_fill << ", 0xbf\n";
+    if (align_==4) {
+      f << "\t.balign\t4, 0xbf\n";
+    } else {
+      int n_fill = (int)obj.second->padding_.size();
+      if (n_fill > 0)
+        f << "\t.space\t" << n_fill << ", 0xbf\n";
+    }
 #endif
   }
   f << "\t.balign\t4" << std::endl << std::endl;
@@ -566,7 +662,6 @@ std::string PartDataNOS::asmRef(uint32_t ref)
       ::snprintf(buf, 79, "ref_integer\t%d", ref/4);
       break;
     case 1: // pointer
-//      ::snprintf(buf, 79, "ref_pointer\tobj_%d_%d", index(), ref & ~3);
       if (object_list_.find(ref&~3) != object_list_.end()) {
         ::snprintf(buf, 79, "ref_pointer\t%s", object_list_[ref&~3]->label().c_str());
       } else {
@@ -595,6 +690,30 @@ std::string PartDataNOS::asmRef(uint32_t ref)
   }
   return std::string(buf);
 }
+
+/**
+ Return a symbol from a reference.
+ If the Ref is not a symbol, we return an empty string.
+ \param[in] ref a valid Ref
+ \return[in] a string containing the mixed case symbol text, or empty if ref
+      does not reference a symbol
+ */
+std::string PartDataNOS::getSymbol(uint32_t ref)
+{
+  if ( (ref&3)==1 ) {
+    auto obj_it = object_list_.find(ref&~3);
+    if ( obj_it != object_list_.end() ) {
+      auto up_obj = obj_it->second;
+      Object *obj = &(*obj_it->second);
+      ObjectSymbol *sym = dynamic_cast<ObjectSymbol*>(obj);
+      if (sym) {
+        return sym->symbol();
+      }
+    }
+  }
+  return std::string("");
+}
+
 
 /**
  Try to add a label to the list of unique labels.

@@ -335,6 +335,14 @@ int Package::writeAsm(const std::string &assembler_file_name)
   << "\t.int\t0x0000001a\n"
   << "\t.endm\n\n";
 
+  asm_file << "\t.macro\tnscmd1 cmd, data\n"
+  << "\t.byte\t(\\cmd<<3)|\\data\n"
+  << "\t.endm\n\n";
+
+  asm_file << "\t.macro\tnscmd3 cmd, data\n"
+  << "\t.byte\t(\\cmd<<3)|0x07, \\data>>8, \\data&0x00ff\n"
+  << "\t.endm\n\n";
+
 //  asm_file << "\t.macro\tns_align n\n"
 //  << "\t.space\t(( . - part_0) + 7) & ~(n-1), 0xbf\n"
 //  << "\t.space\t . & 0x0f, 0xbf\n"
