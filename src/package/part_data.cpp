@@ -184,7 +184,11 @@ int Object::writeAsm(std::ofstream &f, PartDataNOS &p)
 {
   (void)p;
   f << label() << ":" << std::endl;
+#if 0
   f << "\t.int\t(" << size_ << "+8)<<8 | " << flags_ << " | " << type_;
+#else
+  f << "\t.int\t(1f-.)<<8 | " << flags_ << " | " << type_;
+#endif
   f << ", " << ref_cnt_ << std::endl;
   return 8;
 }
@@ -534,6 +538,7 @@ int PartDataNOS::writeAsm(std::ofstream &f) {
   f << std::endl;
   for (auto &obj: object_list_) {
     obj.second->writeAsm(f, *this);
+    f << "1:" << std::endl;
 #if 0
     write_data(f, obj.second->padding_);
 #else
