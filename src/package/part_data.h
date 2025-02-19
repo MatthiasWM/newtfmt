@@ -57,10 +57,10 @@ class Object {
 protected:
   std::string label_;
   uint32_t offset_{ 0 };
-  uint32_t type_ {0};
-  uint32_t flags_ {0};
-  uint32_t size_ {0};
-  uint32_t ref_cnt_ {0};
+  uint32_t type_ { 0 };
+  uint32_t flags_ { 0 };
+  uint32_t size_ { 0 };
+  uint32_t ref_cnt_ { 0 };
   uint32_t class_{ 0 };
 public: // TODO: hack
   std::vector<uint8_t> padding_;
@@ -72,6 +72,8 @@ public:
   void loadPadding(PackageBytes &p, uint32_t start, uint32_t align);
   virtual int writeAsm(std::ofstream &f, PartDataNOS &p);
   virtual void makeAsmLabel(PartDataNOS &p);
+  virtual int compare(Object &other_obj) = 0;
+  int compareBase(Object &other);
   std::string &label() { return label_; }
   uint32_t type() const { return type_; }
   uint32_t offset() const { return offset_; }
@@ -84,6 +86,7 @@ public:
   ObjectBinary(uint32_t offset) : Object(offset) { }
   int load(PackageBytes &p) override;
   int writeAsm(std::ofstream &f, PartDataNOS &p) override;
+  int compare(Object &other_obj) override;
 };
 
 class ObjectSymbol : public Object {
@@ -94,6 +97,7 @@ public:
   int load(PackageBytes &p) override;
   int writeAsm(std::ofstream &f, PartDataNOS &p) override;
   void makeAsmLabel(PartDataNOS &p) override;
+  int compare(Object &other_obj) override;
 };
 
 class ObjectSlotted : public Object {
@@ -103,6 +107,7 @@ public:
   ObjectSlotted(uint32_t offset) : Object(offset) { }
   int load(PackageBytes &p) override;
   int writeAsm(std::ofstream &f, PartDataNOS &p) override;
+  int compare(Object &other_obj) override;
 };
 
 class ObjectMap : public ObjectSlotted {
@@ -123,7 +128,7 @@ public:
   int writeAsm(std::ofstream &f) override;
   std::string asmRef(uint32_t ref);
   bool addLabel(std::string label, ObjectSymbol *symbol);
-  int compare(PartData &other) override;
+  int compare(PartData &other_part) override;
 };
 
 } // namespace pkg

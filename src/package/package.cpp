@@ -157,11 +157,19 @@ int Package::writeAsm(std::ofstream &f) {
   f << "\t.short\tpkg_copyright_start-pkg_data, pkg_copyright_end-pkg_copyright_start\t@ copyright\n";
   //  f << "\t.short\t" << name_start_ << ", " << name_length_ << "\t@ name\n";
   f << "\t.short\tpkg_name_start-pkg_data, pkg_name_end-pkg_name_start\t@ name\n";
+#if 0
   f << "\t.int\t" << size_ << "\t@ size\n";
+#else
+  f << "\t.int\tpackage_end-package_start\t@ size\n";
+#endif
   f << "\t.int\t0x" << std::setw(8) << std::hex << date_ << std::dec << "\t@ date\n";
   f << "\t.int\t0x" << std::setw(8) << std::hex << reserved2_ << std::dec << "\t@ reserverd2\n";
   f << "\t.int\t0x" << std::setw(8) << std::hex << reserved3_ << std::dec << "\t@ reserverd3\n";
+#if 0
   f << "\t.int\t" << directory_size_ << "\t@ directory_size\n";
+#else
+  f << "\t.int\tdirectory_size\t@ directory_size\n";
+#endif
   f << "\t.int\t" << num_parts_ << "\t@ num_parts\n";
   f << std::endl;
   int bytes = 52;
@@ -192,6 +200,9 @@ int Package::writeAsm(std::ofstream &f) {
   }
 
   f << "\t.balign\t4, 0xff" << std::endl << std::endl;
+
+  f << "directory_size:" << std::endl << std::endl;
+
 
   // Relocation Data if kRelocationFlag is set
   if (flags_ & 0x04000000) {
@@ -254,15 +265,6 @@ int Package::compare(Package &other) {
     ret = part_[i]->compare(*other.part_[i]);
     if (ret != 0) break;
   }
-// TODO: uint32_t reserved2_ {0};
-//  uint32_t reserved3_ {0};
-//  uint32_t directory_size_ {0};
-//  uint32_t vdata_start_ {0};
-//  //  uint32_t info_start_ {0};
-//  uint32_t info_length_ {0};
-//  std::vector<std::shared_ptr<PartEntry>> part_ { };
-//  std::vector<uint8_t> info_ { };
-//  RelocationData relocation_data_;
   return ret;
 }
 
@@ -333,11 +335,18 @@ int Package::writeAsm(const std::string &assembler_file_name)
   << "\t.int\t0x0000001a\n"
   << "\t.endm\n\n";
 
+//  asm_file << "\t.macro\tns_align n\n"
+//  << "\t.space\t(( . - part_0) + 7) & ~(n-1), 0xbf\n"
+//  << "\t.space\t . & 0x0f, 0xbf\n"
+//  << "\t.endm\n\n";
 
   asm_file << "\t.file\t\"" << file_name_ << "\"" << std::endl;
-  asm_file << "\t.data" << std::endl << std::endl;
+  asm_file << "\t.data" << std::endl;
+  asm_file << "package_start:" << std::endl << std::endl;
 
   int skip = writeAsm(asm_file);
+  asm_file << "package_end:" << std::endl << std::endl;
+
   if (skip < (int)pkg_bytes_->size()) {
     std::cout << "WARNING: Package has " << pkg_bytes_->size()-skip << " more bytes than defined." << std::endl;
     asm_file << "@ ===== Extra data in file" << std::endl;
@@ -365,7 +374,7 @@ int Package::compareFile(const std::string &other_package_file) {
     new_pkg.assign(std::istreambuf_iterator<char>{new_file}, {});
     if (new_pkg == *pkg_bytes_) {
       //      std::cout << "compareBinaries: Packages are identical." << std::endl;
-      std::cout << "OK." << std::endl;
+      //      std::cout << "OK." << std::endl;
     } else {
       int i, n = std::min((int)new_pkg.size(), (int)pkg_bytes_->size());
       for (i=0; i<n; ++i) {

@@ -75,8 +75,10 @@ int PartDataGeneric::load(PackageBytes &p) {
  */
 int PartDataGeneric::writeAsm(std::ofstream &f) {
   f << "@ ===== Part " << part_entry_.index() << " Data Generic" << std::endl;
+  f << "part_" << part_entry_.index() << ":" << std::endl;
   write_data(f, data_);
   f << "\t.balign\t4" << std::endl << std::endl;
+  f << "part_" << part_entry_.index() << "_end:" << std::endl;
   f << "@ ===== Part " << part_entry_.index() << " End" << std::endl << std::endl;
   return part_entry_.size();
 }
@@ -197,6 +199,28 @@ void Object::makeAsmLabel(PartDataNOS &p) {
   label_ = buf;
 }
 
+int Object::compareBase(Object &other)
+{
+  int ret = 0;
+  if (type() != other.type()) {
+    std::cout << "WARNING: Object at " << offset() << ", types differ!" << std::endl;
+    return -1;
+  }
+  if (size() != other.size()) {
+    std::cout << "WARNING: Object at " << offset() << ", sizes differ!" << std::endl;
+    return -1;
+  }
+  if (flags_ != other.flags_) {
+    std::cout << "WARNING: Object at " << offset() << ", flags differ!" << std::endl;
+    ret = -1;
+  }
+  if (class_ != other.class_) {
+    std::cout << "WARNING: Object at " << offset() << ", classes differ!" << std::endl;
+    ret = -1;
+  }
+  return ret;
+}
+
 /** \class pkg::Object
  A Binary Object from the Newton Object System.
  */
@@ -230,6 +254,23 @@ int ObjectBinary::writeAsm(std::ofstream &f, PartDataNOS &p)
   f << "\t" << p.asmRef(class_) << "\t@ class" << std::endl;
   write_data(f, data_);
   return size_;
+}
+
+/**
+ Compare objects.
+ \param[in] other_obj the other object
+ \return 0 if they are the same.
+ */
+int ObjectBinary::compare(Object &other_obj)
+{
+  int ret = compareBase(other_obj);
+  if (ret != 0) return ret;
+  ObjectBinary &other = static_cast<ObjectBinary&>(other_obj);
+  if (data_ != other.data_) {
+    std::cout << "WARNING: Object at " << offset() << ", binary data differs!" << std::endl;
+    ret = -1;
+  }
+  return ret;
 }
 
 /** \class pkg::ObjectSymbol
@@ -332,6 +373,27 @@ void ObjectSymbol::makeAsmLabel(PartDataNOS &p) {
   }
 }
 
+/**
+ Compare objects.
+ \param[in] other_obj the other object
+ \return 0 if they are the same.
+ */
+int ObjectSymbol::compare(Object &other_obj)
+{
+  int ret = compareBase(other_obj);
+  if (ret != 0) return ret;
+  ObjectSymbol &other = static_cast<ObjectSymbol&>(other_obj);
+  if (hash_ != other.hash_) {
+    std::cout << "WARNING: Object at " << offset() << ", symbol hashes differ!" << std::endl;
+    ret = -1;
+  }
+  if (symbol_ != other.symbol_) {
+    std::cout << "WARNING: Object at " << offset() << ", symbols differ!" << std::endl;
+    ret = -1;
+  }
+  return ret;
+}
+
 /** \class pkg::ObjectSlotted
  A Slotted Object (Frame or Array) from the Newton Object System.
  */
@@ -372,6 +434,23 @@ int ObjectSlotted::writeAsm(std::ofstream &f, PartDataNOS &p)
     f << "\t" << p.asmRef(ref) << "\t@ ref" << std::endl;
   }
   return size_;
+}
+
+/**
+ Compare objects.
+ \param[in] other_obj the other object
+ \return 0 if they are the same.
+ */
+int ObjectSlotted::compare(Object &other_obj)
+{
+  int ret = compareBase(other_obj);
+  if (ret != 0) return ret;
+  ObjectSlotted &other = static_cast<ObjectSlotted&>(other_obj);
+  if (ref_list_ != other.ref_list_) {
+    std::cout << "WARNING: Object at " << offset() << ", list of Refs differ!" << std::endl;
+    ret = -1;
+  }
+  return ret;
 }
 
 /** \class pkg::ObjectMap
@@ -455,13 +534,16 @@ int PartDataNOS::writeAsm(std::ofstream &f) {
   f << std::endl;
   for (auto &obj: object_list_) {
     obj.second->writeAsm(f, *this);
-//    if (align_ == 4) {
-//      f << "\t.balign\t" << align_ << ", 0xbf" << std::endl;
-//    } else {
-      write_data(f, obj.second->padding_);
-//    }
+#if 0
+    write_data(f, obj.second->padding_);
+#else
+    int n_fill = (int)obj.second->padding_.size();
+    if (n_fill > 0)
+      f << "\t.space\t" << n_fill << ", 0xbf\n";
+#endif
   }
   f << "\t.balign\t4" << std::endl << std::endl;
+  f << "part_" << part_entry_.index() << "_end:" << std::endl;
   f << "@ ===== Part " << part_entry_.index() << " End" << std::endl << std::endl;
   return part_entry_.size();
 }
@@ -538,12 +620,21 @@ bool PartDataNOS::addLabel(std::string label, ObjectSymbol *symbol) {
 
 /**
  Compare this NOS part with the other NOS part.
- \param[in] other the other part which must be NOS as well
+ \param[in] other_part the other part which must be NOS as well
  \return 0 if they are the same.
  */
-int PartDataNOS::compare(PartData &other)
+int PartDataNOS::compare(PartData &other_part)
 {
-  // TODO: write this
-  (void)other;
-  return -1;
+  int ret = 0;
+  PartDataNOS &other = static_cast<PartDataNOS&>(other_part);
+  if (object_list_.size() != other.object_list_.size()) {
+    std::cout << "WARNING: Part " << part_entry_.index() << ", object list sizes differ!" << std::endl;
+    return -1;
+  }
+  auto other_obj = other.object_list_.begin();
+  for (auto obj = object_list_.begin(); obj != object_list_.end(); ++obj, ++other_obj) {
+    if (obj->second->compare(*other_obj->second) !=0)
+      ret = -1;
+  }
+  return ret;
 }

@@ -134,8 +134,13 @@ int PartEntry::loadPartData(PackageBytes &p) {
 int PartEntry::writeAsm(std::ofstream &f) {
   f << "@ ===== Part Entry " << index_ << std::endl;
   f << "\t.int\t" << offset_ << "\t@ offset" << std::endl;
+#if 0
   f << "\t.int\t" << size_ << "\t@ size" << std::endl;
   f << "\t.int\t" << size2_ << "\t@ size2" << std::endl;
+#else
+  f << "\t.int\tpart_" << index() << "_end-part_" << index() << "\t@ size" << std::endl;
+  f << "\t.int\tpart_" << index() << "_end-part_" << index() << "\t@ size2" << std::endl;
+#endif
   f << "\t.ascii\t\"" << type_ << "\"\t@ type\n";
   f << "\t.int\t" << reserved_ << "\t@ reserved" << std::endl;
   f << "\t.int\t0x" << std::setw(8) << std::setfill('0') << std::hex << flags_ << std::dec << "\t@ flags\n";
@@ -154,7 +159,11 @@ int PartEntry::writeAsm(std::ofstream &f) {
     f << "\t@ WARNING unknown flag: "
     << std::setw(8) << std::setfill('0') << std::hex
     << (flags_ & 0xfffffe0c) << std::dec << std::endl;
+#if 0
   f << "\t.short\t" << info_offset_ << ", " << info_length_ << "\t@ info" << std::endl;
+#else
+  f << "\t.short\tpart" << index_ << "info_start, part" << index_ << "info_end-part" << index_ << "info_start\t@ info" << std::endl;
+#endif
   f << "\t.short\t" << compressor_offset_ << ", " << compressor_length_ << "\t@ compressor" << std::endl;
   f << std::endl;
   return 32;
@@ -190,20 +199,25 @@ int PartEntry::writeAsmPartData(std::ofstream &f) {
  */
 int PartEntry::compare(PartEntry &other)
 {
-  // TODO: write this
-//  int index_;
-//  uint32_t offset_ {0};
-//  uint32_t size_ {0};
-//  uint32_t size2_ {0};
-//  std::string type_;
-//  uint32_t reserved_ {0};
-//  uint32_t flags_ {0};
-//  uint16_t info_offset_ {0};
-//  uint16_t info_length_ {0};
-//  uint16_t compressor_offset_ {0};
-//  uint16_t compressor_length_ {0};
-//  std::string info_;
-//  std::shared_ptr<PartData> part_data_;
-  (void)other;
-  return -1;
+  int ret = 0;
+  if (size_ != other.size_) {
+    std::cout << "WARNING: Part " << index_ << ", sizes differ!" << std::endl;
+    return -1;
+  }
+  if (type_ != other.type_) {
+    std::cout << "WARNING: Part " << index_ << ", types differ!" << std::endl;
+    return -1;
+  }
+  if (flags_ != other.flags_) {
+    std::cout << "WARNING: Part " << index_ << ", flags differ!" << std::endl;
+    ret = -1;
+  }
+  if (info_ != other.info_) {
+    std::cout << "WARNING: Part " << index_ << ", info texts differ!" << std::endl;
+    ret = -1;
+  }
+  if (ret != 0)
+    return ret;
+
+  return part_data_->compare(*other.part_data_);
 }

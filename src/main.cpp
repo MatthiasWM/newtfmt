@@ -40,7 +40,8 @@ const std::string gnu_as { "/opt/homebrew/bin/arm-none-eabi-as" };
 const std::string gnu_objcopy { "/opt/homebrew/bin/arm-none-eabi-objcopy" };
 
 //std::string input_pkg_name { "/Users/matt/Azureus/unna/games/Mines/Mines.pkg" };
-std::string input_pkg_name { "/Users/matt/Azureus/unna/games/SuperNewtris2.0/SNewtris.pkg" };
+//std::string input_pkg_name { "/Users/matt/Azureus/unna/games/SuperNewtris2.0/SNewtris.pkg" };
+std::string input_pkg_name { "/Users/matt/Azureus/unna/games/DeepGreen1.0b3/deepgreen10b3.pkg" }; // contains relocation data
 
 /**
  Call the GNU assembler to create an object file form the assembler file.
@@ -118,10 +119,11 @@ int main(int argc, const char * argv[])
     std::cout << "ERROR comparing the original package and the new package contents." << std::endl;
     return 0;
   }
-  if (my_pkg.compareFile("/Users/matt/dev/newtfmt.git/mines.pkg") < 0) {
-    std::cout << "ERROR comparing the binaries of the original package and the new package." << std::endl;
-    return 0;
-  }
+//  if (my_pkg.compareFile("/Users/matt/dev/newtfmt.git/mines.pkg") < 0) {
+//    std::cout << "ERROR comparing the binaries of the original package and the new package." << std::endl;
+//    return 0;
+//  }
+  std::cout << "OK." << std::endl;
   return 0;
 }
 

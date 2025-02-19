@@ -74,15 +74,24 @@ inserting or removing data — do not disrupt the structure of the Package,
 even if addresses and offsets change dynamically.
 
 I want to make sure that all offsets and sizes are using labels and then
-verify that the packages still load and work correctly.
+verify that the packages still load and work correctly. This requires a 
+method to compare the contents of a package, and not just a binary comparison
+of the original and the generated package files.
 
 Not sure if this is needed for relocation Data as well as it is rarely used
 (but if it *is* used, it seems to implement copy protection schemes). We could
 add an ARM32 disassembler if we want to dive deeper int that. 
 
+### Next
+
+- ✓ binary compare ignoring alignment filler
+- ✓ run through test files for verification
+- run through test files and find modifications
+- verify that modified files still load and run correctly
+
 ### Next I want to generate a Newton Object Tree from the binary data:
 
-- implement a rough Newton Object System (nos)
+- ✓ implement a rough Newton Object System (nos)
 - generate Newton Object tree from package
 - create package from Newton Object tree
 - compare binary data from original package and Object Tree generated package
