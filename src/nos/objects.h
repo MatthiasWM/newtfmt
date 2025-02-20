@@ -288,6 +288,9 @@ inline Ref Sym(const std::string &name) { return Sym(name.c_str()); }
 Ref AllocateBinary(RefArg theClass, Index length);
 Ptr BinaryData(Ref r);
 
+Ref MakeReal(double d);
+
+
 
 constexpr Symbol kSymArray { "array" };
 constexpr Ref kRefArray { kSymArray };

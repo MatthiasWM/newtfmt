@@ -95,9 +95,12 @@ add an ARM32 disassembler if we want to dive deeper int that.
 
 - ✓ implement a rough Newton Object System (nos)
 - ⌛︎ generate Newton Object tree from package
-  - ✓ write slotted objects
+  - ✓ write symbols
+  - ✓ write arrays
+  - ✓ write frames
   - ✓ write immediates
-  - ⌛︎ write Reals
+  - ✓ write Reals
+  - ✓ write strings
   - write magics
   - write unicode chars
   - write all special refs

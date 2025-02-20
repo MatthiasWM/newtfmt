@@ -343,7 +343,7 @@ int nos::Frame::Print(PrintState &ps) const
 }
 
 Ref nos::MakeString(const char *str) {
-  return Ref(new Object(str));
+  return Ref(new Object(::strdup(str)));
 }
 
 Ref nos::Sym(const char *name) {
@@ -370,4 +370,9 @@ Ptr nos::BinaryData(Ref r)
 
   BinaryObject *binary = static_cast<BinaryObject*>(r.GetObject());
   return binary->Data();
+}
+
+Ref nos::MakeReal(Real d)
+{
+  return Ref(new Object(d));
 }

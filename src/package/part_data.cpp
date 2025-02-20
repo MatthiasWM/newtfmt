@@ -376,15 +376,31 @@ int ObjectBinary::compare(Object &other_obj)
 }
 
 nos::Ref ObjectBinary::toNOS(PartDataNOS &p) {
-  if (nos_object_)
+  if (nos_object_) // TODO: nos_object_ must be cleared first, and must be written whenever we return from this or other methods
     return nos::Ref(nos_object_);
-  (void)p;
-  uint32_t class_ref = class_;
-  uint32_t data_size = (uint32_t)data_.size();
-  nos::Ref bin = nos::AllocateBinary(p.refToNOS(class_ref), data_size);
-  void *dst = nos::BinaryData(bin);
-  ::memcpy(dst, data_.data(), data_size);
-  return bin;
+  std::string klass = p.getSymbol(class_);
+  if (nos::symcmp(klass.c_str(), "real")==0) {
+    union { uint64_t x; double d; } v;
+    ::memcpy(&v.x, &data_[0], 8);
+    v.x = htonll(v.x);
+    return nos::MakeReal(v.d);
+  } else if (nos::symcmp(klass.c_str(), "string")==0) {
+    std::u16string s;
+    int n = (int)data_.size();
+    for (int i=0; i<n; i+=2) {
+      uint16_t c = ((data_[i]<<8)|data_[i+1]);
+      if (c==0) break;
+      s += c;
+    }
+    return nos::MakeString(utf16_to_utf8(s));
+  } else {
+    uint32_t class_ref = class_;
+    uint32_t data_size = (uint32_t)data_.size();
+    nos::Ref bin = nos::AllocateBinary(p.refToNOS(class_ref), data_size);
+    void *dst = nos::BinaryData(bin);
+    ::memcpy(dst, data_.data(), data_size);
+    return bin;
+  }
 }
 
 // MARK: -
