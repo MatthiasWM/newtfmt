@@ -34,7 +34,7 @@ public:
 //  printDepth: 3,
 //  printLength: nil,
 //  uint32_t print_length_{ std::numeric_limits<uint32_t>::max() };
-  uint32_t print_depth_{ 3 };
+  uint32_t print_depth_{ 8 };
   uint32_t current_depth_{ 0 };
   FILE *out_{ nullptr };
   bool sym_next_{ false };

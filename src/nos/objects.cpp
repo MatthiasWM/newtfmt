@@ -23,6 +23,11 @@
 
 using namespace nos;
 
+// MARK : - nos::Object1 -
+// MARK : - nos::Object2
+// MARK : nos::Object3
+// MARK : -
+
 nos::Object::Object(const std::string &str)
 : t { Tag::binary, 0x10 }, size_{ (uint32_t)::strlen(str.c_str()) }, binary{ gSymString, ::strdup(str.c_str()) }
 { }
@@ -137,10 +142,18 @@ int nos::Object::Print(PrintState &ps) const
       fprintf(ps.out_, ": <%ld bytes>)", size());
       break;
     case Tag::array:
-      static_cast<const Array*>(this)->Print(ps);
+      if (ps.more_depth()) {
+        static_cast<const Array*>(this)->Print(ps);
+      } else {
+        fprintf(ps.out_, "<0x%016lx>", (uintptr_t)this);
+      }
       break;
     case Tag::frame:
-      static_cast<const Frame*>(this)->Print(ps);
+      if (ps.more_depth()) {
+        static_cast<const Frame*>(this)->Print(ps);
+      } else {
+        fprintf(ps.out_, "<0x%016lx>", (uintptr_t)this);
+      }
       break;
     case Tag::real:
       fprintf(ps.out_, "%g", real.value_);
@@ -201,6 +214,11 @@ nos::Map::Map(RefArg obj_class)
 Ref nos::AllocateArray(RefArg theClass, Index length)
 {
   return Ref(new nos::Array(theClass, length));
+}
+
+Ref nos::AllocateArray(Index length)
+{
+  return AllocateArray(kRefArray, length);
 }
 
 Index nos::Array::AddSlot(RefArg value)
@@ -283,11 +301,13 @@ int nos::Array::Print(PrintState &ps) const
 {
   fprintf(ps.out_, "[\n");
   ps.incr_depth();
-  ps.tab();
-  ps.expect_symbol(true);
-  array.class_.Print(ps);
-  ps.expect_symbol(false);
-  fprintf(ps.out_, ":\n");
+  if (!array.class_.IsSymbol() || ::SymbolCompare(array.class_, kSymArray)!=0) {
+    ps.tab();
+    ps.expect_symbol(true);
+    array.class_.Print(ps);
+    ps.expect_symbol(false);
+    fprintf(ps.out_, ":\n");
+  }
   int i, n = (int)(size()/sizeof(Ref));
   for (i=0; i<n; ++i) {
     ps.tab();
@@ -332,6 +352,22 @@ Ref nos::Sym(const char *name) {
   // TODO: if not, we must add it to the list
   // TODO: if list of known symbols is read-only, clone the list
   // TODO: return a Ref to the global symbol and return
-  return Ref(new Symbol(name));
+  return Ref(new Symbol(::strdup(name)));
 }
 
+Ref nos::AllocateBinary(RefArg theClass, Index length)
+{
+  return Ref(new BinaryObject(theClass, length, ::calloc(length, 1)));
+}
+
+Ptr nos::BinaryData(Ref r)
+{
+  if (!r.IsBinary())
+    return nullptr;
+//    throw BadTypeWithFrameData(kNSErrNotAnArray);
+//  if (IsReadOnly(array_ref))
+//    throw FramesWithBadValue(kNSErrObjectReadOnly);
+
+  BinaryObject *binary = static_cast<BinaryObject*>(r.GetObject());
+  return binary->Data();
+}

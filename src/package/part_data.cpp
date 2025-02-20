@@ -28,8 +28,11 @@
 #include <iostream>
 #include <fstream>
 #include <ios>
+#include <cassert>
 
 using namespace pkg;
+
+
 
 /** \class pkg::PartData
  Base class for holding the data in a NewtonScript Package Part
@@ -85,6 +88,7 @@ int PartDataGeneric::writeAsm(std::ofstream &f) {
   return part_entry_.size();
 }
 
+// MARK: -
 
 /** \class pkg::Object
  Any kind of Object from the Newton Object System.
@@ -226,6 +230,8 @@ int Object::compareBase(Object &other)
   }
   return ret;
 }
+
+// MARK: -
 
 /** \class pkg::Object
  A Binary Object from the Newton Object System.
@@ -369,6 +375,20 @@ int ObjectBinary::compare(Object &other_obj)
   return ret;
 }
 
+nos::Ref ObjectBinary::toNOS(PartDataNOS &p) {
+  if (nos_object_)
+    return nos::Ref(nos_object_);
+  (void)p;
+  uint32_t class_ref = class_;
+  uint32_t data_size = (uint32_t)data_.size();
+  nos::Ref bin = nos::AllocateBinary(p.refToNOS(class_ref), data_size);
+  void *dst = nos::BinaryData(bin);
+  ::memcpy(dst, data_.data(), data_size);
+  return bin;
+}
+
+// MARK: -
+
 /** \class pkg::ObjectSymbol
  A Symbol from the Newton Object System.
  */
@@ -490,6 +510,16 @@ int ObjectSymbol::compare(Object &other_obj)
   return ret;
 }
 
+nos::Ref ObjectSymbol::toNOS(PartDataNOS &p) {
+  if (nos_object_)
+    return nos::Ref(nos_object_);
+  (void)p;
+  return nos::Sym(symbol());
+}
+
+
+// MARK: -
+
 /** \class pkg::ObjectSlotted
  A Slotted Object (Frame or Array) from the Newton Object System.
  */
@@ -549,6 +579,42 @@ int ObjectSlotted::compare(Object &other_obj)
   return ret;
 }
 
+nos::Ref ObjectSlotted::toNOS(PartDataNOS &p) {
+  if (nos_object_)
+    return nos::Ref(nos_object_);
+  mark(true);
+  if (type_ == 1) {
+    uint32_t class_ref = class_;
+    nos::Ref arr = nos::AllocateArray(p.refToNOS(class_ref), 0);
+    int i, n = (int)ref_list_.size();
+    for (i=0; i<n; ++i) {
+      uint32_t ref = ref_list_[i];
+      nos::Ref nos_ref = p.refToNOS(ref);
+      nos::AddArraySlot(arr, nos_ref);
+    }
+    return arr;
+  } else if (type_ == 3) {
+    nos::Ref frm = nos::AllocateFrame();
+    // TODO: check if class_ is really a map
+    ObjectMap *map = static_cast<ObjectMap*>(p.object_at(class_));
+    int i, n = (int)ref_list_.size();
+    for (i=0; i<n; ++i) {
+      uint32_t sym_offset = map->symbol_at(i);
+      ObjectSymbol *sym = static_cast<ObjectSymbol*>(p.object_at(sym_offset));
+      uint32_t ref = ref_list_[i];
+      nos::Ref nos_ref = p.refToNOS(ref);
+      nos::SetFrameSlot(frm, nos::Sym(sym->symbol()), nos_ref);
+    }
+    return frm;
+  } else {
+    std::cout << "ERROR: Slotted Object has unknown type!" << std::endl;
+    return nos::RefNIL;
+  }
+}
+
+
+// MARK: -
+
 /** \class pkg::ObjectMap
  An Array of Symbols, as used by the Frame Object to create named indexing.
  */
@@ -569,11 +635,13 @@ int ObjectMap::writeAsm(std::ofstream &f, PartDataNOS &p)
     std::cout << "WARNING: Unknown map flag set: " << (class_>>2) << std::endl;
   if (ref_list_.size() > 0) {
     f << "\t" << p.asmRef(ref_list_[0]) << "\t@ supermap";
-// Yes, we use supermaps in Packages which will make life slightly harder
-//    if (ref_list_[0] != 0x00000002) {
-//      std::cout << "WARNING: map references a supermap!" << std::endl;
-//      f << " to SUPERMAP";
-//    }
+#if 1
+    // Yes, we use supermaps in Packages which will make life slightly harder
+    if (ref_list_[0] != 0x00000002) {
+      std::cout << "WARNING: map references a supermap!" << std::endl;
+      f << " to SUPERMAP";
+    }
+#endif
     f << std::endl;
     int i, n = (int)ref_list_.size();
     for (i=1; i<n; ++i) {
@@ -582,6 +650,22 @@ int ObjectMap::writeAsm(std::ofstream &f, PartDataNOS &p)
   }
   return size_;
 }
+
+// TODO: supermaps!
+uint32_t ObjectMap::symbol_at(int index)
+{
+  if (ref_list_[0]!=2) {
+    std::cout << "ERROR: supermap not supported" << std::endl;
+  }
+  return ref_list_[index+1];
+}
+
+nos::Ref ObjectMap::toNOS(PartDataNOS &p) {
+  return ObjectSlotted::toNOS(p);
+}
+
+
+// MARK: -
 
 /** \class pkg::PartDataNOS
  All the data in a NOS Part of the Package.
@@ -761,4 +845,73 @@ int PartDataNOS::compare(PartData &other_part)
       ret = -1;
   }
   return ret;
+}
+
+
+Object *PartDataNOS::object_at(uint32_t offset)
+{
+  return object_list_[offset&~3].get();
+}
+
+/**
+ Convert this part of the package into a Newton OS object tree.
+ \return the object tree or an error code as an integer
+ */
+nos::Ref PartDataNOS::toNOS()
+{
+  // Mark all objects as not yet written
+  for (auto &obj: object_list_)
+    obj.second->mark(false);
+
+  // the first object must be an array with one element that is the root of the tree
+  // TODO: many assumptions, no error checking!
+  auto root_it = object_list_.begin();
+  ObjectSlotted *root_obj = static_cast<ObjectSlotted*>(root_it->second.get());
+  uint32_t data_ref = root_obj->slot(0);
+  Object *data_obj = object_at(data_ref);
+  nos::Ref nos_form = data_obj->toNOS(*this);
+
+  // count the objects that were not written
+  int unmarked = 0;
+  for (auto &obj: object_list_)
+    if (!obj.second->marked())
+      unmarked++;
+  if (unmarked > 0)
+    std::cout << "WARNING: " << unmarked << " objects not converted!" << std::endl;
+
+  return nos_form;
+}
+
+nos::Ref PartDataNOS::refToNOS(uint32_t ref) {
+//  static char buf[80];
+  switch (ref & 3) {
+    case 0: { // integer
+      int32_t s = static_cast<int32_t>(ref);
+      nos::Integer v = (nos::Integer(s))/4;
+      return nos::Ref(v); }
+    case 1: // pointer
+      return object_at(ref)->toNOS(*this);
+    case 2: // special
+      if (ref == 2) {
+        return nos::RefNIL;
+      } else if (ref == 0x1a) {
+        return nos::RefTRUE;
+      } else if ((ref & 15) == 10) {
+        // TODO: unicode character
+//        uint32_t c = ref >> 4;
+//        if (c>=32 && c<127)
+//          ::snprintf(buf, 79, "ref_unichar '%c'", (char)c);
+//        else
+//          ::snprintf(buf, 79, "ref_unichar %d", c);
+        return nos::RefNIL;
+      } else {
+        // TODO: special
+//        ::snprintf(buf, 79, ".int\t0x%08x", ref);
+        return nos::RefNIL;
+      }
+      break;
+    case 3: // TODO: magic
+      return nos::RefNIL;
+  }
+  return nos::RefNIL;
 }

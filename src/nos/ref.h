@@ -61,9 +61,9 @@ private:
   typedef struct {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     Tag tag_:kRefTagBits;
-    uintptr_t value_:kRefValueBits;
+    Integer value_:kRefValueBits;
 #else
-    uintptr_t value_:kRefValueBits;
+    Integer value_:kRefValueBits;
     Tag tag_:kRefTagBits;
 #endif
   } Value;
@@ -93,8 +93,8 @@ public:
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   constexpr Ref() : i { Tag::immed, Type::special, 0 } { };
   constexpr Ref(Type type, Integer ival) : i { Tag::immed, type, (unsigned long)ival } { };
-  constexpr Ref(Integer i) : v { Tag::integer, (unsigned long)i } {}
-  constexpr Ref(int i) : v { Tag::integer, (unsigned long)i } {}
+  constexpr Ref(Integer i) : v { Tag::integer, i } {}
+  constexpr Ref(int i) : v { Tag::integer, (Integer)i } {}
   constexpr Ref(UniChar u) : i { Tag::immed, Type::unichar, u } {}
 #else
   constexpr Ref() : i { 0, Type::special, Tag::immed } { };

@@ -20,6 +20,9 @@
 #ifndef NEWTFMT_PACKAGE_PART_ENTRY_H
 #define NEWTFMT_PACKAGE_PART_ENTRY_H
 
+#include "nos/types.h"
+#include "nos/ref.h"
+
 #include <iostream>
 #include <fstream>
 #include <ios>
@@ -55,6 +58,7 @@ public:
   int writeAsmInfo(std::ofstream &f);
   int writeAsmPartData(std::ofstream &f);
   int compare(PartEntry &other);
+  nos::Ref toNOS();
 };
 
 } // namespace pkg

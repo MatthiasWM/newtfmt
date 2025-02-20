@@ -57,11 +57,7 @@ int Ref::Print(PrintState &ps) const
 {
   switch (v.tag_) {
     case Tag::pointer:
-      if (ps.more_depth()) {
-        o->Print(ps);
-      } else {
-        fprintf(ps.out_, "<0x%016lx>", (uintptr_t)o);
-      }
+      o->Print(ps);
       break;
     case Tag::integer:
       fprintf(ps.out_, "%ld", (Integer)v.value_);

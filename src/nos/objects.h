@@ -21,7 +21,6 @@
 #define NEWTFMT_NOS_OBJECTS_H
 
 #include "nos/types.h"
-
 #include "nos/ref.h"
 
 #include <string>
@@ -138,6 +137,12 @@ protected:
     return _hash1(str) * 0x9E3779B9;
   }
 
+  constexpr Object(const Binary_ a, uint32_t size)
+  : t { Tag::binary, 0x10 },
+  size_ { size },
+  binary { a }
+  { }
+
   constexpr Object(const Array_ a, uint32_t num_slots)
   : t { Tag::array, 0x10 },
     size_ { static_cast<uint32_t>(num_slots*sizeof(Ref)) },
@@ -187,6 +192,14 @@ public:
 
   int Print(PrintState &ps) const;
 
+};
+
+class BinaryObject: public Object
+{
+public:
+  BinaryObject(RefArg theClass, Index size, void *data)
+  : Object( Binary_{ theClass, (char*)data }, (uint32_t)size ) { }
+  void *Data() { return (void*)binary.data_; }
 };
 
 class SlottedObject: public Object
@@ -262,6 +275,7 @@ constexpr Object::Object(Real value)
 Ref AllocateFrame();
 void SetFrameSlot(RefArg obj, RefArg slot, RefArg value);
 Ref AllocateArray(RefArg obj_class, Index length);
+Ref AllocateArray(Index length);
 Index FindOffset(Ref map, Ref tag);
 Index AddArraySlot(RefArg array_ref, RefArg value);
 bool IsReadOnly(RefArg ref);
@@ -270,6 +284,9 @@ Ref MakeString(const char *str);
 inline Ref MakeString(const std::string &str) { return MakeString(str.c_str()); }
 Ref Sym(const char *name);
 inline Ref Sym(const std::string &name) { return Sym(name.c_str()); }
+
+Ref AllocateBinary(RefArg theClass, Index length);
+Ptr BinaryData(Ref r);
 
 
 constexpr Symbol kSymArray { "array" };

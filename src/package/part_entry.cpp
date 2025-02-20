@@ -22,6 +22,10 @@
 #include "package_bytes.h"
 #include "part_data.h"
 
+#include "nos/objects.h"
+
+#include <cassert>
+
 using namespace pkg;
 
 /** \class pkg::PartEntry
@@ -220,4 +224,35 @@ int PartEntry::compare(PartEntry &other)
     return ret;
 
   return part_data_->compare(*other.part_data_);
+}
+
+/**
+ Convert this part of the package into a Newton OS object tree.
+ \return the object tree or an error code as an integer
+ */
+nos::Ref PartEntry::toNOS() {
+  auto part = nos::AllocateFrame();
+  nos::SetFrameSlot(part, nos::Sym("type"), nos::MakeString(type_));
+  nos::SetFrameSlot(part, nos::Sym("flags"), (int)flags_);
+  nos::SetFrameSlot(part, nos::Sym("info"), nos::MakeString(info_));
+  // TODO: compressor?
+  // TODO: check part type!
+  switch (flags_ & 3) {
+    case 0: // kProtocolPart
+      nos::SetFrameSlot(part, nos::Sym("warning"),
+                        nos::MakeString("WARNING: Protocol Parts not yet understood."));
+      break;
+    case 1: // kNOSPart
+      nos::SetFrameSlot(part, nos::Sym("data"), part_data_->toNOS());
+      break;
+    case 2: // kRawPart
+      nos::SetFrameSlot(part, nos::Sym("warning"),
+                        nos::MakeString("WARNING: Raw Parts not yet understood."));
+      break;
+    case 3: // kPackagePart
+      nos::SetFrameSlot(part, nos::Sym("warning"),
+                        nos::MakeString("WARNING: Package Parts in Packages not yet understood."));
+      break;
+  }
+  return part;
 }

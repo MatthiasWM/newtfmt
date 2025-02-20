@@ -128,9 +128,8 @@ int main(int argc, const char * argv[])
     return 0;
   }
 #endif
-  nos::Ref r = my_pkg.toNOS();
-  (void)r;
-//  nos::Print(r);
+  nos::Ref nos_pkg = my_pkg.toNOS();
+  nos::Print(nos_pkg);
   std::cout << "OK." << std::endl;
   return 0;
 }

@@ -20,6 +20,9 @@
 #ifndef NEWTFMT_PACKAGE_PART_DATA_H
 #define NEWTFMT_PACKAGE_PART_DATA_H
 
+#include "nos/types.h"
+#include "nos/ref.h"
+
 #include <ios>
 #include <cstdlib>
 #include <vector>
@@ -39,6 +42,7 @@ public:
   virtual int load(PackageBytes &p) = 0;
   virtual int writeAsm(std::ofstream &f) = 0;
   virtual int compare(PartData &other);
+  virtual nos::Ref toNOS() { return nos::RefNIL; }
   int index();
 };
 
@@ -62,6 +66,8 @@ protected:
   uint32_t size_ { 0 };
   uint32_t ref_cnt_ { 0 };
   uint32_t class_{ 0 };
+  bool mark_ { false };
+  nos::Object *nos_object_ { nullptr };
 public: // TODO: hack
   std::vector<uint8_t> padding_;
 public:
@@ -73,11 +79,14 @@ public:
   virtual int writeAsm(std::ofstream &f, PartDataNOS &p);
   virtual void makeAsmLabel(PartDataNOS &p);
   virtual int compare(Object &other_obj) = 0;
+  virtual nos::Ref toNOS(PartDataNOS &p) = 0;
   int compareBase(Object &other);
   std::string &label() { return label_; }
   uint32_t type() const { return type_; }
   uint32_t offset() const { return offset_; }
   uint32_t size() const { return size_; }
+  void mark(bool v) { mark_ = v; }
+  bool marked() { return mark_; }
 };
 
 class ObjectBinary : public Object {
@@ -87,6 +96,7 @@ public:
   int load(PackageBytes &p) override;
   int writeAsm(std::ofstream &f, PartDataNOS &p) override;
   int compare(Object &other_obj) override;
+  nos::Ref toNOS(PartDataNOS &p) override;
 };
 
 class ObjectSymbol : public Object {
@@ -99,6 +109,7 @@ public:
   void makeAsmLabel(PartDataNOS &p) override;
   int compare(Object &other_obj) override;
   std::string symbol() { return symbol_; }
+  nos::Ref toNOS(PartDataNOS &p) override;
 };
 
 class ObjectSlotted : public Object {
@@ -109,12 +120,16 @@ public:
   int load(PackageBytes &p) override;
   int writeAsm(std::ofstream &f, PartDataNOS &p) override;
   int compare(Object &other_obj) override;
+  uint32_t slot(int i) { return ref_list_[i]; }
+  nos::Ref toNOS(PartDataNOS &p) override;
 };
 
 class ObjectMap : public ObjectSlotted {
 public:
   ObjectMap(uint32_t offset) : ObjectSlotted(offset) { }
+  uint32_t symbol_at(int index);
   int writeAsm(std::ofstream &f, PartDataNOS &p) override;
+  nos::Ref toNOS(PartDataNOS &p) override;
 };
 
 class PartDataNOS : public PartData {
@@ -131,6 +146,9 @@ public:
   std::string getSymbol(uint32_t ref);
   bool addLabel(std::string label, ObjectSymbol *symbol);
   int compare(PartData &other_part) override;
+  Object *object_at(uint32_t offset);
+  nos::Ref toNOS() override;
+  nos::Ref refToNOS(uint32_t ref);
 };
 
 } // namespace pkg
