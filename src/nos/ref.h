@@ -128,14 +128,13 @@ public:
   bool IsBinary() const;
   bool IsArray() const;
   bool IsFrame() const;
+  bool IsSymbol() const;
+  bool IsReadOnly() const;
 
-  Ref GetArraySlot(Index slot) const;
   Object *GetObject() const { return IsPtr() ? o : nullptr; }
 
   int Print(PrintState &ps) const;
 };
-
-using RefArg = const Ref&;
 
 constexpr Ref RefNIL;
 constexpr Ref RefTRUE { Ref::Type::boolean, 1 };
@@ -147,7 +146,8 @@ constexpr bool IsPtr(Ref r) { return r.IsPtr(); }
 inline bool IsBinary(Ref r) { return r.IsBinary(); }
 inline bool IsArray(Ref r) { return r.IsArray(); }
 inline bool IsFrame(Ref r) { return r.IsFrame(); }
-inline Ref GetArraySlot(RefArg array, Index slot) { return array.GetArraySlot(slot); }
+
+
 
 } // namespace nos
 

@@ -23,6 +23,10 @@
 #include "part_entry.h"
 #include "tools/tools.h"
 
+#include "nos/objects.h"
+
+#include <cassert>
+
 using namespace pkg;
 
 /** \class pkg::Package
@@ -413,3 +417,50 @@ int Package::compareContents(const std::string &other_package_file) {
   return compare(other);
 }
 
+/**
+ Convert this package into a Newton OS object tree.
+ \return the object tree or an error code as an integer
+ */
+nos::Ref Package::toNOS() {
+  nos::Ref pkg = nos::AllocateFrame();
+  assert(nos::IsFrame(pkg));
+  nos::SetFrameSlot(pkg, nos::Sym("top"), 0);
+  assert(nos::IsFrame(pkg));
+  nos::Print(pkg);
+
+  nos::Ref arr = nos::AllocateArray(nos::kRefArray, 2);
+  assert(nos::IsArray(arr));
+  nos::Print(arr);
+  nos::AddArraySlot(arr, 32);
+  nos::AddArraySlot(arr, nos::MakeString("hello"));
+  nos::Print(arr);
+
+
+//  nos::SetFrameSlot(pkg, nos::Sym("signature"), nos::MakeString(signature_));
+
+//  std::string signature_ { };
+//  std::string type_ { };
+//  uint32_t flags_ {0};
+//  uint32_t version_ {0};
+//  uint16_t copyright_start_ {0};
+//  uint16_t copyright_length_ {0};
+//  uint16_t name_start_ {0};
+//  uint16_t name_length_ {0};
+//  uint32_t size_ {0};
+//  uint32_t date_ {0};
+//  uint32_t reserved2_ {0};
+//  uint32_t reserved3_ {0};
+//  uint32_t directory_size_ {0};
+//  uint32_t num_parts_ {0};
+//  uint32_t vdata_start_ {0};
+//  //  uint32_t info_start_ {0};
+//  uint32_t info_length_ {0};
+//  std::vector<std::shared_ptr<PartEntry>> part_ { };
+//  std::string copyright_ { };
+//  std::string name_ { };
+//  std::vector<uint8_t> info_ { };
+//  RelocationData relocation_data_;
+//
+//  std::string file_name_ { };
+  return pkg;
+}

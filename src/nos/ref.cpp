@@ -41,9 +41,16 @@ bool Ref::IsFrame() const {
   return IsPtr() && o->IsFrame();
 }
 
-// TODO: this should probably throw an exception?
-Ref Ref::GetArraySlot(Index slot) const {
-  return IsArray() ? o->GetSlot(slot) : RefNIL;
+bool Ref::IsSymbol() const {
+  return IsPtr() && o->IsSymbol();
+}
+
+bool Ref::IsReadOnly() const {
+  auto obj = GetObject();
+  if (obj)
+    return obj->IsReadOnly();
+  else
+    return false;
 }
 
 int Ref::Print(PrintState &ps) const
@@ -90,3 +97,5 @@ int Ref::Print(PrintState &ps) const
 
   return 0;
 }
+
+

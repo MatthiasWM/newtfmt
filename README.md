@@ -86,16 +86,15 @@ add an ARM32 disassembler if we want to dive deeper int that.
 
 - ✓ binary compare ignoring alignment filler
 - ✓ run through test files for verification
-- write bytecode
-- verify reading bytecode
-- symbolic offsets in bytecode
-- run through test files and find modifications
+- ✓ write bytecode (it's good enough to write them into comments)
+- ✓ verify reading bytecode
+- ~ symbolic offsets in bytecode (not now)
 - verify that modified files still load and run correctly
 
 ### Next I want to generate a Newton Object Tree from the binary data:
 
 - ✓ implement a rough Newton Object System (nos)
-- generate Newton Object tree from package
+- ⌛︎ generate Newton Object tree from package
 - create package from Newton Object tree
 - compare binary data from original package and Object Tree generated package
 

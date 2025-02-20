@@ -27,6 +27,8 @@
 
 #include "relocation_data.h"
 
+#include "nos/ref.h"
+
 namespace pkg {
 
 class PartEntry;
@@ -75,6 +77,7 @@ public:
   int writeAsm(const std::string &assembler_file_name);
   int compareFile(const std::string &other_package_file);
   int compareContents(const std::string &other_package_file);
+  nos::Ref toNOS();
 };
 
 

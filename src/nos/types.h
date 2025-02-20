@@ -35,7 +35,7 @@ using Ptr = void*;
 using NativePtr = void*;
 using ObjectPtr = class Object*;
 
-using RefArg = const class Ref &;
+using RefArg = const class Ref;
 
 using NewtonErr = int;
 

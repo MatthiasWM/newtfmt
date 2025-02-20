@@ -29,6 +29,13 @@
 
 namespace nos {
 
+class Object;
+class SlottedObject;
+class Array;
+class Frame;
+class Map;
+class Symbol;
+
 class alignas(uintptr_t) Object
 {
   friend class Ref;
@@ -77,7 +84,7 @@ protected:
   } Array_;
 
   typedef struct {
-    Ref    map_;
+    Map    *map_;
     Ref    *slot_;
     uint32_t reserve_;
   } Frame_;
@@ -143,6 +150,12 @@ protected:
     frame { f }
   { }
 
+  Object(bool, Frame_ f, uint32_t num_slots)
+  : t { Tag::frame, 0x00 },
+  size_ { static_cast<uint32_t>(num_slots*sizeof(Ref)) },
+  frame { f }
+  { }
+
   constexpr Object(const Symbol_ sym_arg)
   : t { Tag::symbol, 0x10 },
     size_ { static_cast<uint32_t>(_strlen(sym_arg.string_)+1) },
@@ -151,14 +164,14 @@ protected:
 
 public:
 
-  constexpr Object(Tag tag, Ref class_or_map, uint32_t num_slots, const Ref *values)
-  : t { tag, 0x10 },
-    size_{ static_cast<uint32_t>(num_slots*sizeof(Ref)) },
-    frame { class_or_map, (Ref*)values, 0 }
-  { }
+//  constexpr Object(Tag tag, Ref class_or_map, uint32_t num_slots, const Ref *values)
+//  : t { tag, 0x10 },
+//    size_{ static_cast<uint32_t>(num_slots*sizeof(Ref)) },
+//    frame { class_or_map, (Ref*)values, 0 }
+//  { }
 
-  constexpr Object(const char *string);
-
+  constexpr Object(const char *str);
+  Object(const std::string &str);
   constexpr Object(Real value);
 
   Index size() const { return size_; }
@@ -167,8 +180,8 @@ public:
   constexpr bool IsBinary() const { return (t.tag_ == Tag::binary); }
   constexpr bool IsArray() const { return (t.tag_ == Tag::array); }
   constexpr bool IsFrame() const { return (t.tag_ == Tag::frame); }
-
-  Ref GetSlot(Index i) const;
+  constexpr bool IsSymbol() const { return (t.tag_ == Tag::symbol); }
+  constexpr bool IsReadOnly() const { return (f.read_only_ == 1); }
 
   int SymbolCompare(const Object *other) const;
 
@@ -176,25 +189,55 @@ public:
 
 };
 
-class alignas(uintptr_t) Array: public Object
+class SlottedObject: public Object
+{
+public:
+  constexpr SlottedObject(const Array_ a, uint32_t num_slots)
+  : Object { a, num_slots } { }
+  constexpr SlottedObject(const Frame_ f, uint32_t num_slots)
+  : Object { f, num_slots } { }
+  Index Length() const;
+  void SetLength(Index new_length);
+  Ref GetSlot(Index i) const;
+};
+
+class Array: public SlottedObject
 {
 public:
   constexpr Array(Ref obj_class, uint32_t num_slots, const Ref *values)
-  : Object( Array_{ obj_class, const_cast<Ref*>(values), 0 }, num_slots) { }
+  : SlottedObject( Array_{ obj_class, const_cast<Ref*>(values), 0 }, num_slots) { }
+  Array(RefArg theClass);
+  Array(RefArg theClass, Index length);
+  int Print(PrintState &ps) const;
+  Index AddSlot(RefArg value);
 };
 
-class alignas(uintptr_t) Frame: public Object
+class Map: public Array
 {
 public:
-  constexpr Frame(Ref map, uint32_t num_slots, const Ref *values)
-  : Object( Frame_{ map, const_cast<Ref*>(values), 0 }, num_slots) { }
+  constexpr Map(Ref obj_class, uint32_t num_slots, const Ref *values)
+  : Array{obj_class, num_slots, values } { }
+  Map(RefArg theClass);
+  Map(RefArg theClass, Index length);
 };
 
-class alignas(uintptr_t) Symbol: public Object
+class Frame: public SlottedObject
+{
+public:
+  constexpr Frame(Map *map, uint32_t num_slots, const Ref *values)
+  : SlottedObject( Frame_{ map, const_cast<Ref*>(values), 0 }, num_slots) { }
+  Frame();
+  int Print(PrintState &ps) const;
+  void SetSlot(RefArg tag, RefArg value);
+  Index AddSlot(RefArg tag);
+};
+
+class Symbol: public Object
 {
 public:
   constexpr Symbol(const char *symbol)
   : Object( Symbol_{ RefSymbolClass, const_cast<char*>(symbol), _hash(symbol) } ) { }
+  int Print(PrintState &ps) const;
 };
 
 
@@ -207,13 +250,64 @@ constexpr Ref gSymString { gSymObjString };
 constexpr Symbol gSymObjReal { "real" };
 constexpr Ref gSymReal { gSymObjReal };
 
-constexpr Object::Object(const char *string)
-: t { Tag::binary, 0x10 }, size_{ _strlen(string)+1 }, binary{ gSymString, const_cast<char*>(string) }
+constexpr Object::Object(const char *str)
+: t { Tag::binary, 0x10 }, size_{ _strlen(str)+1 }, binary{ gSymString, const_cast<char*>(str) }
 { }
 
 constexpr Object::Object(Real value)
 : t { Tag::real, 0x10 }, size_{ 0 }, real { gSymReal, value }
 { }
+
+
+Ref AllocateFrame();
+void SetFrameSlot(RefArg obj, RefArg slot, RefArg value);
+Ref AllocateArray(RefArg obj_class, Index length);
+Index FindOffset(Ref map, Ref tag);
+Index AddArraySlot(RefArg array_ref, RefArg value);
+bool IsReadOnly(RefArg ref);
+Ref GetArraySlot(RefArg array_obj, Index slot);
+Ref MakeString(const char *str);
+inline Ref MakeString(const std::string &str) { return MakeString(str.c_str()); }
+Ref Sym(const char *name);
+inline Ref Sym(const std::string &name) { return Sym(name.c_str()); }
+
+
+constexpr Symbol kSymArray { "array" };
+constexpr Ref kRefArray { kSymArray };
+
+
+// TODO: move these into their own header
+
+#include <stdexcept>
+
+
+constexpr NewtonErr kNSErrBaseFrames = -48000;  // Frames errors
+
+constexpr NewtonErr kNSErrObjectReadOnly  = kNSErrBaseFrames - 214;  // Object is read-only
+constexpr NewtonErr kNSErrNotAFrame       = kNSErrBaseFrames - 400;  // Expected a frame
+constexpr NewtonErr kNSErrNotAnArray      = kNSErrBaseFrames - 401;  // Expected an array
+constexpr NewtonErr kNSErrNotASymbol      = kNSErrBaseFrames - 410;  // Expected a symbol
+
+class RuntimeError : public std::runtime_error
+{
+protected:
+  NewtonErr err_;
+public:
+  RuntimeError(NewtonErr err, const std::string& msg = "")
+  : std::runtime_error(msg), err_(err) {}
+};
+
+class BadTypeWithFrameData : public RuntimeError
+{
+public:
+  BadTypeWithFrameData(NewtonErr err, const std::string& msg = "") : RuntimeError(err, msg) {}
+};
+
+class FramesWithBadValue : public RuntimeError
+{
+public:
+  FramesWithBadValue(NewtonErr err, const std::string& msg = "") : RuntimeError(err, msg) {}
+};
 
 
 

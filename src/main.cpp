@@ -104,6 +104,7 @@ int main(int argc, const char * argv[])
     std::cout << "ERROR reading package file." << std::endl;
     return 0;
   }
+#if 0
   if (my_pkg.writeAsm("/Users/matt/dev/newtfmt.git/mines.s") < 0) {
     std::cout << "ERROR writing assembler file." << std::endl;
     return 0;
@@ -120,10 +121,16 @@ int main(int argc, const char * argv[])
     std::cout << "ERROR comparing the original package and the new package contents." << std::endl;
     return 0;
   }
-//  if (my_pkg.compareFile("/Users/matt/dev/newtfmt.git/mines.pkg") < 0) {
-//    std::cout << "ERROR comparing the binaries of the original package and the new package." << std::endl;
-//    return 0;
-//  }
+#endif
+#if 0
+  if (my_pkg.compareFile("/Users/matt/dev/newtfmt.git/mines.pkg") < 0) {
+    std::cout << "ERROR comparing the binaries of the original package and the new package." << std::endl;
+    return 0;
+  }
+#endif
+  nos::Ref r = my_pkg.toNOS();
+  (void)r;
+//  nos::Print(r);
   std::cout << "OK." << std::endl;
   return 0;
 }
