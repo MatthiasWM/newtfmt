@@ -28,10 +28,5 @@ int write_utf16(std::ofstream &f, std::string &u8str);
 int write_data(std::ofstream &f, std::vector<uint8_t> &data);
 std::string unicode_to_utf8(char32_t c);
 
-//inline uint64_t htonll(uint64_t x) {
-//  return ((1==htonl(1)) ? (x) : ((uint64_t)htonl((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32));
-//}
-
-
 #endif // NEWTFMT_TOOLS_TOOLS_H
 

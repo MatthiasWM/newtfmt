@@ -32,6 +32,7 @@ using namespace pkg;
 /**
  Load a single package and word-align the input stream.
  \param[in] p Reference to the package data stream.
+ \return 0
  */
 int RelocationSet::load(PackageBytes &p)
 {
@@ -69,7 +70,7 @@ int RelocationSet::writeAsm(std::ofstream &f)
   return (int)(4 + offset_list_.size() + padding_.size());
 }
 
-/** \class pkg:RelcationData
+/** \class pkg:RelocationData
  Header data set for all relocation data.
  */
 

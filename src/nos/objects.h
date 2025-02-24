@@ -290,6 +290,14 @@ Ptr BinaryData(Ref r);
 
 Ref MakeReal(double d);
 
+//#define  MAKECHAR(c)        MAKEIMMED(kImmedChar, (unsigned) c)
+//#define  MAKEMAGICPTR(index)  ((Ref) (((long) (index)) << kRefTagBits) | kTagMagicPtr)
+//extern  Ref    AddressToRef(void *);
+//extern  void *  RefToAddress(Ref r);
+//extern  int    RefToInt(Ref r);
+//extern  UniChar  RefToUniChar(Ref r);
+
+
 
 
 constexpr Symbol kSymArray { "array" };

@@ -38,6 +38,9 @@ std::string utf16_to_utf8(std::u16string &wstr) {
   return std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(wstr);
 }
 
+/**
+ Convert a Unicode UTF-8 string into UTF-16 word sequence.
+ */
 std::u16string utf8_to_utf16(std::string &str) {
   return std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(str);
 }

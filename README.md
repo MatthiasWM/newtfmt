@@ -1,4 +1,7 @@
 
+
+## newtfmt moved to https://github.com/DyneLang/DyneLang
+
 # newtfmt
 
 "newtfmt" is a tool designed to read NewtonOS Package files, analyze their 

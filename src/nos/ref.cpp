@@ -82,12 +82,15 @@ int Ref::Print(PrintState &ps) const
           }
           break;
         case Type::reserved:
-          fprintf(ps.out_, "[reserved]");
+          if (sizeof(t)==4)
+            fprintf(ps.out_, "[reserved: 0x%08lx]", t);
+          else
+            fprintf(ps.out_, "[reserved: 0x%086lx]", t);
           break;
       }
       break;
     case Tag::magic:
-      fprintf(ps.out_, "[magic]");
+      fprintf(ps.out_, "@%ld", v.value_);
       break;
   }
 

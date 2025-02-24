@@ -30,6 +30,7 @@ using Index = long;
 using Size = long;
 using Real = double;
 using UniChar = char32_t;
+using Magic = int;
 
 using Ptr = void*;
 using NativePtr = void*;

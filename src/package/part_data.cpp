@@ -376,14 +376,18 @@ int ObjectBinary::compare(Object &other_obj)
 }
 
 nos::Ref ObjectBinary::toNOS(PartDataNOS &p) {
-  if (nos_object_) // TODO: nos_object_ must be cleared first, and must be written whenever we return from this or other methods
+  if (nos_object_)
     return nos::Ref(nos_object_);
+  assert(!marked()); // discover recursion
+  mark(true);
+  nos::Ref ret = nos::RefNIL;
+  p.refToNOS(class_); // mark the object as used
   std::string klass = p.getSymbol(class_);
   if (nos::symcmp(klass.c_str(), "real")==0) {
     union { uint64_t x; double d; } v;
     ::memcpy(&v.x, &data_[0], 8);
     v.x = htonll(v.x);
-    return nos::MakeReal(v.d);
+    ret = nos::MakeReal(v.d);
   } else if (nos::symcmp(klass.c_str(), "string")==0) {
     std::u16string s;
     int n = (int)data_.size();
@@ -392,15 +396,17 @@ nos::Ref ObjectBinary::toNOS(PartDataNOS &p) {
       if (c==0) break;
       s += c;
     }
-    return nos::MakeString(utf16_to_utf8(s));
+    ret = nos::MakeString(utf16_to_utf8(s));
   } else {
     uint32_t class_ref = class_;
     uint32_t data_size = (uint32_t)data_.size();
     nos::Ref bin = nos::AllocateBinary(p.refToNOS(class_ref), data_size);
     void *dst = nos::BinaryData(bin);
     ::memcpy(dst, data_.data(), data_size);
-    return bin;
+    ret = bin;
   }
+  nos_object_ = ret.GetObject();
+  return ret;
 }
 
 // MARK: -
@@ -526,11 +532,14 @@ int ObjectSymbol::compare(Object &other_obj)
   return ret;
 }
 
-nos::Ref ObjectSymbol::toNOS(PartDataNOS &p) {
+nos::Ref ObjectSymbol::toNOS(PartDataNOS &) {
   if (nos_object_)
     return nos::Ref(nos_object_);
-  (void)p;
-  return nos::Sym(symbol());
+  assert(!marked()); // discover recursion
+  mark(true);
+  nos::Ref ret = nos::Sym(symbol());
+  nos_object_ = ret.GetObject();
+  return ret;
 }
 
 
@@ -598,34 +607,37 @@ int ObjectSlotted::compare(Object &other_obj)
 nos::Ref ObjectSlotted::toNOS(PartDataNOS &p) {
   if (nos_object_)
     return nos::Ref(nos_object_);
+  assert(!marked()); // discover recursion
   mark(true);
+  nos::Ref ret = nos::RefNIL;
   if (type_ == 1) {
-    uint32_t class_ref = class_;
-    nos::Ref arr = nos::AllocateArray(p.refToNOS(class_ref), 0);
+    nos::Ref class_ref = p.refToNOS(class_);
+    nos::Ref array = nos::AllocateArray(class_ref, 0);
     int i, n = (int)ref_list_.size();
     for (i=0; i<n; ++i) {
-      uint32_t ref = ref_list_[i];
-      nos::Ref nos_ref = p.refToNOS(ref);
-      nos::AddArraySlot(arr, nos_ref);
+      nos::Ref value = p.refToNOS(ref_list_[i]);
+      nos::AddArraySlot(array, value);
     }
-    return arr;
+    ret = array;
   } else if (type_ == 3) {
-    nos::Ref frm = nos::AllocateFrame();
+    nos::Ref frame = nos::AllocateFrame();
     // TODO: check if class_ is really a map
+    p.refToNOS(class_); // mark as created, it will be linked later if is actually used
     ObjectMap *map = static_cast<ObjectMap*>(p.object_at(class_));
+    map->mark(true);
     int i, n = (int)ref_list_.size();
     for (i=0; i<n; ++i) {
-      uint32_t sym_offset = map->symbol_at(i);
-      ObjectSymbol *sym = static_cast<ObjectSymbol*>(p.object_at(sym_offset));
-      uint32_t ref = ref_list_[i];
-      nos::Ref nos_ref = p.refToNOS(ref);
-      nos::SetFrameSlot(frm, nos::Sym(sym->symbol()), nos_ref);
+      nos::Ref tag = p.refToNOS(map->symbol_at(i));
+      nos::Ref value = p.refToNOS(ref_list_[i]);
+      nos::SetFrameSlot(frame, tag, value);
     }
-    return frm;
+    ret = frame;
   } else {
     std::cout << "ERROR: Slotted Object has unknown type!" << std::endl;
-    return nos::RefNIL;
+    ret = nos::RefNIL;
   }
+  nos_object_ = ret.GetObject();
+  return ret;
 }
 
 
@@ -883,15 +895,19 @@ nos::Ref PartDataNOS::toNOS()
   // TODO: many assumptions, no error checking!
   auto root_it = object_list_.begin();
   ObjectSlotted *root_obj = static_cast<ObjectSlotted*>(root_it->second.get());
+  root_obj->mark(true);
   uint32_t data_ref = root_obj->slot(0);
   Object *data_obj = object_at(data_ref);
   nos::Ref nos_form = data_obj->toNOS(*this);
 
   // count the objects that were not written
   int unmarked = 0;
-  for (auto &obj: object_list_)
-    if (!obj.second->marked())
+  for (auto &obj: object_list_) {
+    if (!obj.second->marked()) {
       unmarked++;
+      printf("Unmarked object at %d, %s\n", obj.first, obj.second->label().c_str());
+    }
+  }
   if (unmarked > 0)
     std::cout << "WARNING: " << unmarked << " objects not converted!" << std::endl;
 
@@ -913,13 +929,7 @@ nos::Ref PartDataNOS::refToNOS(uint32_t ref) {
       } else if (ref == 0x1a) {
         return nos::RefTRUE;
       } else if ((ref & 15) == 10) {
-        // TODO: unicode character
-//        uint32_t c = ref >> 4;
-//        if (c>=32 && c<127)
-//          ::snprintf(buf, 79, "ref_unichar '%c'", (char)c);
-//        else
-//          ::snprintf(buf, 79, "ref_unichar %d", c);
-        return nos::RefNIL;
+        return nos::Ref(static_cast<nos::UniChar>(ref>>4));
       } else {
         // TODO: special
 //        ::snprintf(buf, 79, ".int\t0x%08x", ref);
@@ -927,7 +937,7 @@ nos::Ref PartDataNOS::refToNOS(uint32_t ref) {
       }
       break;
     case 3: // TODO: magic
-      return nos::RefNIL;
+      return nos::Ref(static_cast<nos::Magic>(ref>>4));
   }
   return nos::RefNIL;
 }
